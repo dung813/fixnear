@@ -32,7 +32,7 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <Phone className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Hotline hỗ trợ: 0912 345 678 (8:00 - 21:00)</span>
+                <span>Hotline hỗ trợ: 0912345678 (8:00 - 21:00)</span>
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <Mail className="w-4 h-4 text-amber-500 flex-shrink-0" />
