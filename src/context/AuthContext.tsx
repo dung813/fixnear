@@ -1,0 +1,101 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { User, UserRole } from '../types';
+import { storageService, initializeStorage } from '../services/storageService';
+import { DEMO_USERS } from '../data/mockData';
+
+interface AuthContextType {
+  user: User | null;
+  role: UserRole;
+  isAuthenticated: boolean;
+  login: (email: string, role?: UserRole) => boolean;
+  loginAsRole: (role: UserRole) => void;
+  register: (user: Omit<User, 'id' | 'createdAt'>) => void;
+  logout: () => void;
+  updateProfile: (data: Partial<User>) => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    initializeStorage();
+    const storedUser = storageService.getCurrentUser();
+    if (storedUser) {
+      setUser(storedUser);
+    }
+  }, []);
+
+  const login = (email: string, role?: UserRole): boolean => {
+    const users = storageService.getUsers();
+    let found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!found && role) {
+      // Find matching demo user by role
+      found = DEMO_USERS.find(u => u.role === role);
+    }
+    if (found) {
+      setUser(found);
+      storageService.setCurrentUser(found);
+      return true;
+    }
+    return false;
+  };
+
+  const loginAsRole = (role: UserRole) => {
+    const demoUser = DEMO_USERS.find(u => u.role === role) || DEMO_USERS[0];
+    setUser(demoUser);
+    storageService.setCurrentUser(demoUser);
+  };
+
+  const register = (userData: Omit<User, 'id' | 'createdAt'>) => {
+    const newUser: User = {
+      ...userData,
+      id: `user-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    storageService.addUser(newUser);
+    setUser(newUser);
+    storageService.setCurrentUser(newUser);
+  };
+
+  const logout = () => {
+    setUser(null);
+    storageService.setCurrentUser(null);
+  };
+
+  const updateProfile = (data: Partial<User>) => {
+    if (!user) return;
+    const updated = { ...user, ...data };
+    setUser(updated);
+    storageService.setCurrentUser(updated);
+  };
+
+  const role: UserRole = user ? user.role : 'customer';
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        role,
+        isAuthenticated: !!user,
+        login,
+        loginAsRole,
+        register,
+        logout,
+        updateProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
