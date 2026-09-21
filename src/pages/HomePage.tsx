@@ -99,9 +99,9 @@ export const HomePage: React.FC = () => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            Gặp vấn đề? <br className="hidden sm:block" />
+            FixNear – <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-blue-200 bg-clip-text text-transparent">
-              Tìm thợ gần bạn – Xử lý nhanh.
+              Dịch vụ sửa chữa tại nhà nhanh chóng
             </span>
           </h1>
 
