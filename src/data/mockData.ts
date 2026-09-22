@@ -153,6 +153,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
     reviewCount: 142,
     completedJobs: 186,
     completionRate: 99,
+    totalEarnings: 18600000,
     experienceYears: 8,
     city: 'Hà Nội',
     district: 'Cầu Giấy',
@@ -430,7 +431,7 @@ export const INITIAL_REQUESTS: ServiceRequest[] = [
     categoryId: 'dien',
     categoryName: 'Sửa chữa Điện',
     title: 'Chập điện nhảy Aptomat tổng tầng 2 không gạt lên được',
-    description: 'Sáng nay đang cắm ấm siêu tốc thì bị nổ tách một cái rồi sập aptomat tổng tầng 2. Gạt lên là tự nhảy lại ngay. Cần thợ có thiết bị đo điện đến xử lý gấp.',
+    description: 'Chập Aptomat phòng khách, mất điện toàn bộ tầng 1.',
     photos: [
       'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80'
     ],

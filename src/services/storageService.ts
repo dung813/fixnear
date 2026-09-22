@@ -211,6 +211,36 @@ export const storageService = {
     }
   },
 
+  // Record a phát sinh (surcharge) charge while a job is still in progress, without
+  // moving the booking into the quote_pending handover flow (see submitQuotation below).
+  addSurcharge(bookingId: string, charge: { description: string; reason: string; amount: number }): void {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    if (idx !== -1) {
+      const current = list[idx];
+      const extraCharges = [
+        ...(current.quotation?.extraCharges || []),
+        { id: `extra-${Date.now()}`, description: charge.description, reason: charge.reason, amount: charge.amount, photos: [] },
+      ];
+      const laborCost = current.quotation?.laborCost ?? 0;
+      const partsTotal = (current.quotation?.parts || []).reduce((s, p) => s + p.unitPrice * p.quantity, 0);
+      const extraTotal = extraCharges.reduce((s, e) => s + e.amount, 0);
+      list[idx] = {
+        ...current,
+        quotation: {
+          laborCost,
+          parts: current.quotation?.parts || [],
+          extraCharges,
+          totalAmount: laborCost + partsTotal + extraTotal,
+          status: current.quotation?.status || 'pending',
+          customerFeedback: current.quotation?.customerFeedback,
+          createdAt: current.quotation?.createdAt || new Date().toISOString(),
+        },
+      };
+      setItem(STORAGE_KEYS.BOOKINGS, list);
+    }
+  },
+
   // Quotation approval (phát sinh vật tư / chi phí trong quá trình sửa chữa)
   // Also doubles as the technician's handover step: completion photos + a
   // revised warranty offer can be attached at the same time the quote is sent.

@@ -43,9 +43,11 @@ export const DashboardSidebar: React.FC = () => {
   const technicianLinks = [
     { label: 'Tổng quan công việc', path: '/technician/dashboard', icon: LayoutDashboard },
     { label: 'Yêu cầu gần bạn (Radar)', path: '/technician/radar', icon: ClipboardList },
-    { label: 'Lịch hẹn khách đặt', path: '/my-bookings', icon: CalendarCheck },
+    { label: 'Lịch làm việc', path: '/technician/schedule', icon: CalendarCheck },
+    { label: 'Dịch vụ & Bảng giá', path: '/technician/services', icon: UserCheck },
+    { label: 'Thu nhập', path: '/technician/earnings', icon: TrendingUp },
+    { label: 'Đánh giá', path: '/technician/reviews', icon: Star },
     { label: 'Tin nhắn khách hàng', path: '/chat', icon: MessageSquare },
-    { label: 'Hồ sơ thợ & Dịch vụ', path: `/technicians/${user?.id === 'user-tech-1' ? 'tech-1' : 'tech-1'}`, icon: UserCheck },
     { label: 'Gói FixNear Pro', path: '/technician/pro', icon: Sparkles },
   ];
 

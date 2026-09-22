@@ -49,6 +49,17 @@ export const Navbar: React.FC = () => {
     ? storageService.getBookings().some(b => b.customerId === user.id)
     : false;
 
+  const myTechnician = user && role === 'technician'
+    ? storageService.getTechnicians().find(t => t.userId === user.id || t.id === 'tech-1')
+    : undefined;
+
+  const activeJobsCount = myTechnician
+    ? storageService.getBookings().filter(
+        b => b.technicianId === myTechnician.id &&
+          ['accepted', 'en_route', 'surveying', 'in_progress', 'quote_pending', 'payment_pending'].includes(b.status)
+      ).length
+    : 0;
+
   const isNewAccount = !!user && (Date.now() - new Date(user.createdAt).getTime()) < 1000 * 60 * 60 * 24 * 7;
 
   const roleBadgeLabel = role === 'customer' && isNewAccount ? 'MỚI' : role.toUpperCase();
@@ -125,6 +136,14 @@ export const Navbar: React.FC = () => {
               >
                 <ShieldCheck className="w-4 h-4" />
                 Vào trang Quản trị
+              </Link>
+            ) : role === 'technician' && isAuthenticated ? (
+              <Link
+                to="/technician/schedule"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-sm transition-all active:scale-[0.98]"
+              >
+                <CalendarCheck className="w-4 h-4" />
+                Đơn đang thực hiện ({activeJobsCount})
               </Link>
             ) : (
               <button
@@ -250,6 +269,13 @@ export const Navbar: React.FC = () => {
                 className="px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold"
               >
                 Trang Quản trị
+              </Link>
+            ) : role === 'technician' && isAuthenticated ? (
+              <Link
+                to="/technician/schedule"
+                className="px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold"
+              >
+                Đang thực hiện ({activeJobsCount})
               </Link>
             ) : (
               <button

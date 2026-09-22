@@ -45,6 +45,7 @@ export interface Technician {
   reviewCount: number;
   completedJobs: number;
   completionRate: number; // e.g. 98%
+  totalEarnings?: number;
   experienceYears: number;
   city: 'Hà Nội' | 'TP. Hồ Chí Minh';
   district: string;

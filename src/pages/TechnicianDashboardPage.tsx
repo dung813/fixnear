@@ -16,6 +16,7 @@ import { KycVerificationPanel } from '../components/technicians/KycVerificationP
 import { EarningsPanel } from '../components/technicians/EarningsPanel';
 import { TechnicianQuotationModal } from '../components/technicians/TechnicianQuotationModal';
 import { formatCurrency, formatDate, formatRelativeTime } from '../utils/formatters';
+import { Modal } from '../components/common/Modal';
 import {
   CalendarCheck,
   CheckCircle2,
@@ -34,11 +35,32 @@ import {
   X,
   Wallet,
   Wrench,
-  ShieldCheck
+  ShieldCheck,
+  Eye,
+  Navigation,
+  Search
 } from 'lucide-react';
 
 type TabKey = 'radar' | 'schedule' | 'services' | 'earnings' | 'reviews' | 'profile';
 type ScheduleFilter = 'today' | 'tomorrow' | 'upcoming' | 'all';
+
+const pathToTab = (pathname: string): TabKey => {
+  if (pathname === '/technician/schedule') return 'schedule';
+  if (pathname === '/technician/services') return 'services';
+  if (pathname === '/technician/earnings') return 'earnings';
+  if (pathname === '/technician/reviews') return 'reviews';
+  if (pathname === '/technician/pro') return 'profile';
+  return 'radar';
+};
+
+const TAB_TO_PATH: Record<TabKey, string> = {
+  radar: '/technician/radar',
+  schedule: '/technician/schedule',
+  services: '/technician/services',
+  earnings: '/technician/earnings',
+  reviews: '/technician/reviews',
+  profile: '/technician/pro',
+};
 
 export const TechnicianDashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -46,8 +68,7 @@ export const TechnicianDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const initialTab: TabKey = location.pathname === '/technician/pro' ? 'profile' : 'radar';
-  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+  const [activeTab, setActiveTab] = useState<TabKey>(pathToTab(location.pathname));
   const [scheduleFilter, setScheduleFilter] = useState<ScheduleFilter>('all');
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -57,6 +78,14 @@ export const TechnicianDashboardPage: React.FC = () => {
   const [rejectedRequestIds, setRejectedRequestIds] = useState<string[]>([]);
 
   const [quotationBooking, setQuotationBooking] = useState<Booking | null>(null);
+  const [confirmAcceptRequest, setConfirmAcceptRequest] = useState<ServiceRequest | null>(null);
+  const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
+  const [surchargeAmount, setSurchargeAmount] = useState('');
+  const [surchargeReason, setSurchargeReason] = useState('');
+
+  useEffect(() => {
+    setActiveTab(pathToTab(location.pathname));
+  }, [location.pathname]);
 
   const loadData = () => {
     const allTechs = storageService.getTechnicians();
@@ -90,15 +119,51 @@ export const TechnicianDashboardPage: React.FC = () => {
   };
 
   const handleAcceptRequest = (req: ServiceRequest) => {
-    if (!currentTech) return;
+    setConfirmAcceptRequest(req);
+  };
+
+  const confirmAcceptJob = () => {
+    if (!currentTech || !confirmAcceptRequest) return;
+    const req = confirmAcceptRequest;
+
     storageService.updateRequest(req.id, {
       status: 'assigned',
       assignedTechnicianId: currentTech.id,
       assignedTechnicianName: currentTech.name,
     });
-    success('Đã nhận việc!', 'Hãy nhắn tin cho khách để xác nhận thời gian tới nơi.');
-    const conv = storageService.getOrCreateConversation(req.customerId, req.customerName, req.customerAvatar, currentTech);
-    navigate(`/chat?conv=${conv.id}`);
+
+    storageService.addBooking({
+      id: `bk-${Date.now()}`,
+      customerId: req.customerId,
+      customerName: req.customerName,
+      customerPhone: req.customerPhone,
+      customerAvatar: req.customerAvatar,
+      customerAddress: `${req.address}, ${req.district}, ${req.city}`,
+      technicianId: currentTech.id,
+      technicianName: currentTech.name,
+      technicianAvatar: currentTech.avatar,
+      technicianPhone: currentTech.phone,
+      technicianTitle: currentTech.title,
+      categoryId: req.categoryId,
+      serviceName: req.title,
+      date: new Date().toISOString().slice(0, 10),
+      timeSlot: req.preferredTime,
+      address: req.address,
+      city: req.city,
+      district: req.district,
+      notes: req.description,
+      estimatedPrice: req.budget > 0 ? req.budget : currentTech.basePrice,
+      paymentMethod: 'escrow',
+      paymentStatus: 'holding_escrow',
+      escrowAmount: req.budget > 0 ? req.budget : currentTech.basePrice,
+      warrantyMonths: 6,
+      status: 'accepted',
+      createdAt: new Date().toISOString(),
+    });
+
+    success('Đã nhận việc!', 'Đơn hàng đã được chuyển sang mục "Lịch làm việc".');
+    setConfirmAcceptRequest(null);
+    navigate('/technician/schedule');
   };
 
   const handleRejectRequest = (reqId: string) => {
@@ -109,6 +174,35 @@ export const TechnicianDashboardPage: React.FC = () => {
     if (!currentTech) return;
     const conv = storageService.getOrCreateConversation(bk.customerId, bk.customerName, bk.customerAvatar, currentTech);
     navigate(`/chat?conv=${conv.id}`);
+  };
+
+  const openBookingDetail = (bk: Booking) => {
+    setSurchargeAmount('');
+    setSurchargeReason('');
+    setDetailBooking(bk);
+  };
+
+  // Keep the open detail screen in sync with live status updates from `loadData`.
+  useEffect(() => {
+    if (!detailBooking) return;
+    const fresh = bookings.find(b => b.id === detailBooking.id);
+    if (fresh) setDetailBooking(fresh);
+  }, [bookings]);
+
+  const handleSubmitSurcharge = (bk: Booking) => {
+    const amount = Number(surchargeAmount) || 0;
+    if (amount <= 0 || !surchargeReason.trim()) {
+      return;
+    }
+    storageService.addSurcharge(bk.id, {
+      description: surchargeReason,
+      reason: surchargeReason,
+      amount,
+    });
+    success('Đã ghi nhận chi phí phát sinh!', 'Khoản này sẽ được cộng vào báo giá gửi khách khi nghiệm thu.');
+    setSurchargeAmount('');
+    setSurchargeReason('');
+    loadData();
   };
 
   // Live-status button chain: pending -> accepted -> en_route -> surveying -> in_progress -> (quotation) -> quote_pending
@@ -217,7 +311,7 @@ export const TechnicianDashboardPage: React.FC = () => {
         />
         <StatCard
           title="Tổng thu nhập"
-          value={formatCurrency(totalRevenue)}
+          value={formatCurrency(currentTech?.totalEarnings ?? totalRevenue)}
           subtitle="Đã quyết toán"
           icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
           iconBgColor="bg-emerald-50"
@@ -244,7 +338,7 @@ export const TechnicianDashboardPage: React.FC = () => {
             {tabs.map(t => (
               <button
                 key={t.key}
-                onClick={() => setActiveTab(t.key)}
+                onClick={() => navigate(TAB_TO_PATH[t.key])}
                 className={`pb-3 shrink-0 transition relative ${
                   activeTab === t.key
                     ? 'text-blue-600 border-b-2 border-blue-600'
@@ -480,6 +574,16 @@ export const TechnicianDashboardPage: React.FC = () => {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {['accepted', 'en_route', 'surveying', 'in_progress'].includes(bk.status) && (
+                          <button
+                            type="button"
+                            onClick={() => openBookingDetail(bk)}
+                            className="px-3 py-1.5 rounded-xl border border-blue-200 text-xs font-bold text-blue-700 hover:bg-blue-50 transition inline-flex items-center gap-1"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Xem chi tiết đơn
+                          </button>
+                        )}
                         {bk.status === 'pending' && (
                           <Button size="sm" onClick={() => handleUpdateStatus(bk.id, 'accepted')}>
                             Xác nhận nhận đơn
@@ -618,6 +722,195 @@ export const TechnicianDashboardPage: React.FC = () => {
         booking={quotationBooking}
         onSuccess={loadData}
       />
+
+      {/* Accept-Job Confirmation Modal */}
+      <Modal
+        isOpen={!!confirmAcceptRequest}
+        onClose={() => setConfirmAcceptRequest(null)}
+        title="Xác nhận nhận việc"
+        description="Đơn hàng sẽ được chuyển vào mục Lịch làm việc / Đơn đang xử lý."
+        maxWidth="sm"
+      >
+        {confirmAcceptRequest && (
+          <div className="space-y-4 text-xs">
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
+              <p className="font-bold text-sm text-slate-900">{confirmAcceptRequest.title}</p>
+              <p className="text-slate-500 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                {confirmAcceptRequest.district}, {confirmAcceptRequest.city}
+              </p>
+              <p className="text-slate-500 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                Hẹn: {confirmAcceptRequest.preferredTime}
+              </p>
+            </div>
+            <p className="text-slate-500 leading-relaxed">
+              Bạn có chắc chắn muốn nhận đơn này? Hãy sắp xếp có mặt đúng khung giờ đã hẹn với khách.
+            </p>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button variant="outline" size="sm" onClick={() => setConfirmAcceptRequest(null)}>
+                Hủy
+              </Button>
+              <Button size="sm" className="font-bold" leftIcon={<FileCheck className="w-3.5 h-3.5" />} onClick={confirmAcceptJob}>
+                Xác nhận nhận việc
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* In-Progress Order Detail Screen */}
+      <Modal
+        isOpen={!!detailBooking}
+        onClose={() => setDetailBooking(null)}
+        title="Chi tiết đơn đang xử lý"
+        description={detailBooking ? `${detailBooking.id} - ${detailBooking.customerName}` : undefined}
+        maxWidth="lg"
+      >
+        {detailBooking && (
+          <div className="space-y-5 text-xs">
+            {/* 4-stage live status tracker */}
+            <div className="flex items-center justify-between">
+              {[
+                { key: 'en_route', label: 'Đang di chuyển' },
+                { key: 'surveying', label: 'Đã đến' },
+                { key: 'in_progress', label: 'Đang kiểm tra' },
+                { key: 'completed', label: 'Hoàn thành' },
+              ].map((step, idx, arr) => {
+                const order = ['accepted', 'en_route', 'surveying', 'in_progress', 'completed'];
+                const currentIdx = order.indexOf(detailBooking.status === 'quote_pending' || detailBooking.status === 'payment_pending' || detailBooking.status === 'reviewed' ? 'completed' : detailBooking.status);
+                const stepIdx = order.indexOf(step.key);
+                const isDone = currentIdx > stepIdx || detailBooking.status === 'completed' || detailBooking.status === 'reviewed';
+                const isActive = order[currentIdx] === step.key;
+                return (
+                  <React.Fragment key={step.key}>
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[11px] ${
+                          isDone ? 'bg-emerald-500 text-white' : isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'
+                        }`}
+                      >
+                        {isDone ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
+                      </div>
+                      <span className={`text-[10px] text-center font-semibold ${isActive ? 'text-blue-700' : 'text-slate-500'}`}>
+                        {step.label}
+                      </span>
+                    </div>
+                    {idx < arr.length - 1 && <div className="h-0.5 flex-1 bg-slate-200 -mt-4" />}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-center">
+              {detailBooking.status === 'accepted' && (
+                <Button size="sm" leftIcon={<Navigation className="w-3.5 h-3.5" />} onClick={() => handleUpdateStatus(detailBooking.id, 'en_route')}>
+                  Bắt đầu di chuyển
+                </Button>
+              )}
+              {detailBooking.status === 'en_route' && (
+                <Button size="sm" leftIcon={<MapPin className="w-3.5 h-3.5" />} onClick={() => handleUpdateStatus(detailBooking.id, 'surveying')}>
+                  Đã đến nơi
+                </Button>
+              )}
+              {detailBooking.status === 'surveying' && (
+                <Button size="sm" variant="success" leftIcon={<Search className="w-3.5 h-3.5" />} onClick={() => handleUpdateStatus(detailBooking.id, 'in_progress')}>
+                  Bắt đầu kiểm tra / sửa chữa
+                </Button>
+              )}
+              {detailBooking.status === 'in_progress' && (
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                  leftIcon={<ClipboardCheck className="w-3.5 h-3.5" />}
+                  onClick={() => {
+                    setQuotationBooking(detailBooking);
+                    setDetailBooking(null);
+                  }}
+                >
+                  Hoàn thành & Lập báo giá
+                </Button>
+              )}
+              {['quote_pending', 'payment_pending', 'completed', 'reviewed'].includes(detailBooking.status) && (
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" /> Đã hoàn thành công đoạn sửa chữa
+                </span>
+              )}
+            </div>
+
+            {/* Order info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+              <div>
+                <span className="text-slate-400 block">Dịch vụ:</span>
+                <span className="font-bold text-slate-900">{detailBooking.serviceName}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Khung giờ:</span>
+                <span className="font-bold text-slate-900">{formatDate(detailBooking.date)} ({detailBooking.timeSlot})</span>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-slate-400 block">Địa chỉ:</span>
+                <span>{detailBooking.address}</span>
+              </div>
+            </div>
+
+            {/* Phát sinh pricing form */}
+            <div className="space-y-2 pt-3 border-t border-slate-100">
+              <label className="block font-bold text-amber-700 uppercase tracking-wider">
+                Ghi nhận chi phí phát sinh (nếu có)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                <input
+                  value={surchargeReason}
+                  onChange={e => setSurchargeReason(e.target.value)}
+                  placeholder="Lý do phát sinh (VD: thay tụ điện mới)"
+                  className="sm:col-span-2 rounded-lg border border-amber-200 p-2 text-xs focus:border-blue-600 focus:outline-none"
+                />
+                <input
+                  type="number"
+                  value={surchargeAmount}
+                  onChange={e => setSurchargeAmount(e.target.value)}
+                  placeholder="Số tiền"
+                  className="rounded-lg border border-amber-200 p-2 text-xs focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+              <Button size="sm" variant="outline" onClick={() => handleSubmitSurcharge(detailBooking)}>
+                Thêm khoản phát sinh
+              </Button>
+
+              {detailBooking.quotation?.extraCharges && detailBooking.quotation.extraCharges.length > 0 && (
+                <div className="divide-y divide-amber-100 border border-amber-100 rounded-xl overflow-hidden mt-2">
+                  {detailBooking.quotation.extraCharges.map(ec => (
+                    <div key={ec.id} className="flex items-center justify-between p-2.5 bg-amber-50">
+                      <span className="text-slate-700">{ec.description}</span>
+                      <span className="font-bold text-amber-700">{formatCurrency(ec.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quick actions */}
+            <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+              <a
+                href={`tel:${detailBooking.customerPhone}`}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition inline-flex items-center gap-1"
+              >
+                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                Gọi khách
+              </a>
+              <button
+                type="button"
+                onClick={() => handleChatWithCustomer(detailBooking)}
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition inline-flex items-center gap-1"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Nhắn tin ngay với khách
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
     </div>
   );
