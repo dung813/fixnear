@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole } from '../types';
+import { User, UserRole, Technician } from '../types';
 import { storageService, initializeStorage } from '../services/storageService';
 import { DEMO_USERS } from '../data/mockData';
 
@@ -10,6 +10,10 @@ interface AuthContextType {
   login: (email: string, password?: string) => boolean;
   loginAsRole: (role: UserRole) => void;
   register: (user: Omit<User, 'id' | 'createdAt'>) => void;
+  registerTechnician: (
+    userData: Omit<User, 'id' | 'createdAt'>,
+    techData: Omit<Technician, 'id' | 'userId'>
+  ) => void;
   logout: () => void;
   updateProfile: (data: Partial<User>) => void;
 }
@@ -58,6 +62,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     storageService.setCurrentUser(newUser);
   };
 
+  const registerTechnician = (
+    userData: Omit<User, 'id' | 'createdAt'>,
+    techData: Omit<Technician, 'id' | 'userId'>
+  ) => {
+    const newUserId = `user-tech-${Date.now()}`;
+    const newUser: User = {
+      ...userData,
+      id: newUserId,
+      createdAt: new Date().toISOString(),
+    };
+    const newTech: Technician = {
+      ...techData,
+      id: `tech-${Date.now()}`,
+      userId: newUserId,
+    };
+    storageService.addUser(newUser);
+    storageService.addTechnician(newTech);
+    setUser(newUser);
+    storageService.setCurrentUser(newUser);
+  };
+
   const logout = () => {
     setUser(null);
     storageService.setCurrentUser(null);
@@ -81,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         loginAsRole,
         register,
+        registerTechnician,
         logout,
         updateProfile,
       }}

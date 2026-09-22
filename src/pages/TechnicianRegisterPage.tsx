@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import { storageService } from '../services/storageService';
 import { Technician, User } from '../types';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
@@ -13,7 +12,7 @@ import {
 
 export const TechnicianRegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { registerTechnician } = useAuth();
   const { success, error } = useNotification();
 
   const [name, setName] = useState('');
@@ -60,11 +59,7 @@ export const TechnicianRegisterPage: React.FC = () => {
     setIsSubmitting(true);
 
     setTimeout(() => {
-      const newTechId = `tech-${Date.now()}`;
-      const newUserId = `user-tech-${Date.now()}`;
-
-      const newUser: User = {
-        id: newUserId,
+      const newUser: Omit<User, 'id' | 'createdAt'> = {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -73,12 +68,9 @@ export const TechnicianRegisterPage: React.FC = () => {
         address: address.trim(),
         district,
         city,
-        createdAt: new Date().toISOString(),
       };
 
-      const newTech: Technician = {
-        id: newTechId,
-        userId: newUserId,
+      const newTech: Omit<Technician, 'id' | 'userId'> = {
         name: name.trim(),
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
         title: title.trim() || 'Thợ kỹ thuật sửa chữa',
@@ -119,9 +111,7 @@ export const TechnicianRegisterPage: React.FC = () => {
         }),
       };
 
-      storageService.addUser(newUser);
-      storageService.addTechnician(newTech);
-      storageService.setCurrentUser(newUser);
+      registerTechnician(newUser, newTech);
 
       setIsSubmitting(false);
       success('Đăng ký đối tác thành công!', 'Chào mừng bạn gia nhập mạng lưới FixNear.');
