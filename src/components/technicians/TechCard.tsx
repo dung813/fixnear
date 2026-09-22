@@ -165,7 +165,12 @@ export const TechCard: React.FC<TechCardProps> = ({
 
           <Button
             size="sm"
-            onClick={() => requireAuth(() => onQuickBook && onQuickBook(technician))}
+            onClick={() =>
+              requireAuth(
+                () => onQuickBook && onQuickBook(technician),
+                'Vui lòng đăng nhập tài khoản Khách hàng để đặt lịch sửa chữa.'
+              )
+            }
             className="w-full text-xs font-bold"
             rightIcon={<CalendarCheck className="w-3.5 h-3.5" />}
           >

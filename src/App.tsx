@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { CityProvider } from './context/CityContext';
+import { AuthModalProvider } from './context/AuthModalContext';
 import { RoleDemoBar } from './components/layout/RoleDemoBar';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
+import { AuthGateModal } from './components/common/AuthGateModal';
 
 // Pages
 import { HomePage } from './pages/HomePage';
@@ -43,6 +45,7 @@ export const App: React.FC = () => {
       <AuthProvider>
         <NotificationProvider>
         <CityProvider>
+        <AuthModalProvider>
           <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
             <ScrollToTop />
             <RoleDemoBar />
@@ -81,7 +84,9 @@ export const App: React.FC = () => {
             </main>
 
             <Footer />
+            <AuthGateModal />
           </div>
+        </AuthModalProvider>
         </CityProvider>
         </NotificationProvider>
       </AuthProvider>

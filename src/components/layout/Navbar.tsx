@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCity } from '../../context/CityContext';
+import { useAuthModal } from '../../context/AuthModalContext';
 import { storageService } from '../../services/storageService';
 import { Avatar } from '../common/Avatar';
 import { CreateRequestModal } from '../requests/CreateRequestModal';
-import { Modal } from '../common/Modal';
-import { Button } from '../common/Button';
 import {
   Wrench,
   Search,
@@ -21,8 +20,7 @@ import {
   ChevronDown,
   ShieldCheck,
   HelpCircle,
-  Info,
-  UserCircle
+  Info
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -30,8 +28,8 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [createRequestOpen, setCreateRequestOpen] = useState(false);
-  const [guestBlockOpen, setGuestBlockOpen] = useState(false);
   const { city: selectedCity, setCity: setSelectedCity } = useCity();
+  const { openAuthModal } = useAuthModal();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,7 +41,7 @@ export const Navbar: React.FC = () => {
 
   const handlePostRequestClick = () => {
     if (!isAuthenticated) {
-      setGuestBlockOpen(true);
+      openAuthModal('Vui lòng đăng nhập tài khoản Khách hàng để đăng yêu cầu sửa chữa.');
       return;
     }
     setCreateRequestOpen(true);
@@ -400,46 +398,6 @@ export const Navbar: React.FC = () => {
       )}
 
       <CreateRequestModal isOpen={createRequestOpen} onClose={() => setCreateRequestOpen(false)} />
-
-      {/* Guest gate: block posting a repair request until logged in as a Customer */}
-      <Modal
-        isOpen={guestBlockOpen}
-        onClose={() => setGuestBlockOpen(false)}
-        maxWidth="sm"
-      >
-        <div className="text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-            <UserCircle className="w-7 h-7" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-900">Yêu cầu đăng nhập</h3>
-            <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
-              Vui lòng đăng nhập tài khoản Khách hàng để đăng yêu cầu sửa chữa.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => {
-                setGuestBlockOpen(false);
-                navigate('/register');
-              }}
-            >
-              Đăng ký
-            </Button>
-            <Button
-              className="flex-1 font-bold"
-              onClick={() => {
-                setGuestBlockOpen(false);
-                navigate('/login');
-              }}
-            >
-              Đăng nhập
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </header>
   );
 };

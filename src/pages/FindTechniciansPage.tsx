@@ -69,7 +69,9 @@ export const FindTechniciansPage: React.FC = () => {
   };
   const [maxDistance, setMaxDistance] = useState<number>(10);
   const [minRating, setMinRating] = useState<number>(0);
-  const [maxPrice, setMaxPrice] = useState<number>(1000000);
+  // "Giá khởi điểm từ X" = show technicians whose starting price is X or higher;
+  // defaults to the lowest tier so every technician is visible until the user narrows it.
+  const [minStartingPrice, setMinStartingPrice] = useState<number>(50000);
   const [minExperience, setMinExperience] = useState<number>(0);
   const [availabilityMode, setAvailabilityMode] = useState<'any' | 'today' | 'date'>('any');
   const [availabilityDate, setAvailabilityDate] = useState<string>(todayISO());
@@ -107,13 +109,18 @@ export const FindTechniciansPage: React.FC = () => {
     return ['Tất cả'];
   }, [selectedCity]);
 
-  // Deterministic pseudo-position for the mock Map View (no real geocoding backend available)
-  const getMockPinPosition = (id: string): { top: number; left: number } => {
+  // Position each technician pin around the center "Vị trí của bạn" marker at a
+  // radius proportional to their real distanceKm (angle is pseudo-random per id
+  // since there's no real geocoding backend, but the distance itself is real).
+  const getMapPinPosition = (tech: Technician): { top: number; left: number } => {
     let hash = 0;
-    for (let i = 0; i < id.length; i++) hash = (hash * 37 + id.charCodeAt(i)) % 10000;
-    const top = 12 + (hash % 76); // keep within 12%-88% so pins don't clip the edges
-    const left = 12 + ((hash * 7) % 76);
-    return { top, left };
+    for (let i = 0; i < tech.id.length; i++) hash = (hash * 37 + tech.id.charCodeAt(i)) % 10000;
+    const angle = (hash % 360) * (Math.PI / 180);
+    const radiusPct = Math.min(6 + tech.distanceKm * 11, 42);
+    return {
+      top: 50 + radiusPct * Math.sin(angle),
+      left: 50 + radiusPct * Math.cos(angle),
+    };
   };
 
   // Compute a 0-100 "match score" combining proximity, rating and open-schedule signals
@@ -163,8 +170,8 @@ export const FindTechniciansPage: React.FC = () => {
           return false;
         }
 
-        // Price
-        if (t.basePrice > maxPrice) {
+        // Price (giá khởi điểm từ X trở lên)
+        if (t.basePrice < minStartingPrice) {
           return false;
         }
 
@@ -209,7 +216,7 @@ export const FindTechniciansPage: React.FC = () => {
     selectedDistrict,
     maxDistance,
     minRating,
-    maxPrice,
+    minStartingPrice,
     minExperience,
     availabilityMode,
     availabilityDate,
@@ -225,7 +232,7 @@ export const FindTechniciansPage: React.FC = () => {
     setSelectedDistrict('Tất cả');
     setMaxDistance(10);
     setMinRating(0);
-    setMaxPrice(1000000);
+    setMinStartingPrice(50000);
     setMinExperience(0);
     setAvailabilityMode('any');
     setAvailabilityDate(todayISO());
@@ -424,15 +431,15 @@ export const FindTechniciansPage: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-slate-700">
               <span className="uppercase tracking-wider">Giá khởi điểm từ</span>
-              <span className="text-blue-600">{formatCurrency(maxPrice)}</span>
+              <span className="text-blue-600">{formatCurrency(minStartingPrice)}</span>
             </div>
             <input
               type="range"
               min={50000}
               max={1000000}
               step={50000}
-              value={maxPrice}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxPrice(Number(e.target.value))}
+              value={minStartingPrice}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMinStartingPrice(Number(e.target.value))}
               className="w-full accent-blue-600"
             />
             <div className="flex justify-between text-[10px] text-slate-400">
@@ -592,20 +599,66 @@ export const FindTechniciansPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="relative w-full h-[520px] rounded-2xl border border-slate-200/80 shadow-card overflow-hidden bg-[linear-gradient(#e2e8f0_1px,transparent_1px),linear-gradient(90deg,#e2e8f0_1px,transparent_1px)] bg-[length:32px_32px] bg-slate-50">
+              <div
+                className="relative w-full h-[520px] rounded-2xl border border-slate-200/80 shadow-card overflow-hidden"
+                style={{ backgroundColor: '#eef2e6' }}
+                onClick={() => setActiveMapPin(null)}
+              >
+                {/* Stylized city-map mockup: park blocks, a lake and a river, plus a street grid */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div
+                    className="absolute inset-0 opacity-70"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(#d7ded0 1px,transparent 1px),linear-gradient(90deg,#d7ded0 1px,transparent 1px)',
+                      backgroundSize: '46px 46px',
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0 opacity-40"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(#c7d0b8 1px,transparent 1px),linear-gradient(90deg,#c7d0b8 1px,transparent 1px)',
+                      backgroundSize: '138px 138px',
+                    }}
+                  />
+                  {/* "Sông Hồng" river strip along the right edge */}
+                  <div className="absolute -right-16 -top-10 w-56 h-[700px] bg-sky-300/50 rotate-[18deg] blur-[2px]" />
+                  {/* "Hồ Gươm"-style lake blob near the center-left */}
+                  <div className="absolute top-[38%] left-[22%] w-24 h-16 bg-sky-300/70 rounded-[60%_40%_55%_45%/50%_60%_40%_50%] blur-[1px]" />
+                  {/* Park / green block patches */}
+                  <div className="absolute top-[12%] left-[62%] w-20 h-20 bg-emerald-200/60 rounded-[45%_55%_60%_40%/40%_50%_50%_60%]" />
+                  <div className="absolute bottom-[10%] left-[12%] w-28 h-16 bg-emerald-200/50 rounded-[50%_50%_40%_60%/60%_40%_50%_50%]" />
+                </div>
+
                 <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur px-3 py-1.5 rounded-xl shadow-card text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
                   <MapIcon className="w-3.5 h-3.5 text-blue-600" />
                   Bản đồ minh họa - {selectedCity === 'Tất cả' ? 'Toàn quốc' : selectedCity}
                 </div>
 
+                {/* Center marker: the customer's own location */}
+                <div
+                  style={{ top: '50%', left: '50%' }}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 pointer-events-none"
+                >
+                  <span className="absolute w-10 h-10 rounded-full bg-blue-500/30 animate-ping" />
+                  <div className="relative w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow-lg" />
+                  <span className="mt-1.5 px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold shadow">
+                    Vị trí của bạn
+                  </span>
+                </div>
+
                 {filteredTechs.map(tech => {
-                  const pos = getMockPinPosition(tech.id);
+                  const pos = getMapPinPosition(tech);
                   const isActive = activeMapPin === tech.id;
                   return (
                     <button
                       key={tech.id}
                       type="button"
-                      onClick={() => setActiveMapPin(isActive ? null : tech.id)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setActiveMapPin(isActive ? null : tech.id);
+                      }}
                       style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
                       className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center group"
                     >
@@ -617,6 +670,9 @@ export const FindTechniciansPage: React.FC = () => {
                         <Avatar src={tech.avatar} name={tech.name} size="sm" />
                       </div>
                       <div className={`w-2.5 h-2.5 -mt-1 rotate-45 ${isActive ? 'bg-blue-600' : 'bg-white'} border-r-2 border-b-2 ${isActive ? 'border-blue-600' : 'border-white'} shadow`} />
+                      <span className="mt-0.5 px-1.5 py-0.5 rounded bg-slate-900/80 text-white text-[9px] font-semibold">
+                        ~{tech.distanceKm}km
+                      </span>
 
                       {isActive && (
                         <div className="absolute top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 p-3 text-left z-30 animate-scale-in">
@@ -626,8 +682,8 @@ export const FindTechniciansPage: React.FC = () => {
                             <span className="flex items-center gap-1 font-semibold text-amber-600">
                               <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> {tech.rating}
                             </span>
-                            <span className="flex items-center gap-1 text-slate-500">
-                              <MapPin className="w-3 h-3" /> ~{tech.distanceKm}km
+                            <span className="font-bold text-blue-600">
+                              Giá từ {formatCurrency(tech.basePrice)}
                             </span>
                           </div>
                           <Button

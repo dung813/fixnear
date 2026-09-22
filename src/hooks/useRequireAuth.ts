@@ -1,20 +1,18 @@
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
+import { useAuthModal } from '../context/AuthModalContext';
 
 /**
- * Gate an action behind login. Guest users get redirected to /login with a
- * toast instead of the action running; logged-in users run it immediately.
+ * Gate an action behind login. Guest users see the shared AuthGateModal
+ * (optionally with a custom message) instead of the action running;
+ * logged-in users run it immediately.
  */
 export function useRequireAuth() {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const { info } = useNotification();
+  const { openAuthModal } = useAuthModal();
 
-  return (action: () => void) => {
+  return (action: () => void, message?: string) => {
     if (!isAuthenticated) {
-      info('Vui lòng đăng nhập để tiếp tục', 'Bạn cần đăng nhập tài khoản để sử dụng tính năng này.');
-      navigate('/login');
+      openAuthModal(message);
       return;
     }
     action();
