@@ -99,7 +99,7 @@ export const FindTechniciansPage: React.FC = () => {
   // District options based on city
   const districtOptions = useMemo(() => {
     if (selectedCity === 'Hà Nội') {
-      return ['Tất cả', 'Cầu Giấy', 'Thanh Xuân', 'Đống Đa', 'Nam Từ Liêm', 'Hai Bà Trưng', 'Ba Đình', 'Hà Đông'];
+      return ['Tất cả', 'Cầu Giấy', 'Thanh Xuân', 'Đống Đa', 'Hoàng Mai', 'Nam Từ Liêm', 'Hai Bà Trưng', 'Ba Đình', 'Hà Đông'];
     }
     if (selectedCity === 'TP. Hồ Chí Minh') {
       return ['Tất cả', 'Quận 1', 'Quận 3', 'Bình Thạnh', 'Gò Vấp', 'Tân Bình', 'Quận 7', 'Phú Nhuận', 'Thủ Đức'];

@@ -87,6 +87,21 @@ export const TechnicianDashboardPage: React.FC = () => {
     setActiveTab(pathToTab(location.pathname));
   }, [location.pathname]);
 
+  // Deep-link support: the Navbar's "Đơn đang thực hiện" button passes the
+  // relevant booking id so it opens straight into that order's progress screen.
+  useEffect(() => {
+    const openBookingId = (location.state as { openBookingId?: string } | null)?.openBookingId;
+    if (openBookingId && bookings.length > 0) {
+      const target = bookings.find(b => b.id === openBookingId);
+      if (target) {
+        setSurchargeAmount('');
+        setSurchargeReason('');
+        setDetailBooking(target);
+      }
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, bookings]);
+
   const loadData = () => {
     const allTechs = storageService.getTechnicians();
     const myTech = allTechs.find((t: Technician) => t.userId === user?.id || t.id === 'tech-1') || allTechs[0];

@@ -53,12 +53,14 @@ export const Navbar: React.FC = () => {
     ? storageService.getTechnicians().find(t => t.userId === user.id || t.id === 'tech-1')
     : undefined;
 
-  const activeJobsCount = myTechnician
+  const myActiveBookings = myTechnician
     ? storageService.getBookings().filter(
         b => b.technicianId === myTechnician.id &&
           ['accepted', 'en_route', 'surveying', 'in_progress', 'quote_pending', 'payment_pending'].includes(b.status)
-      ).length
-    : 0;
+      )
+    : [];
+  const activeJobsCount = myActiveBookings.length;
+  const primaryActiveBookingId = myActiveBookings[0]?.id;
 
   const isNewAccount = !!user && (Date.now() - new Date(user.createdAt).getTime()) < 1000 * 60 * 60 * 24 * 7;
 
@@ -140,6 +142,7 @@ export const Navbar: React.FC = () => {
             ) : role === 'technician' && isAuthenticated ? (
               <Link
                 to="/technician/schedule"
+                state={primaryActiveBookingId ? { openBookingId: primaryActiveBookingId } : undefined}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-sm transition-all active:scale-[0.98]"
               >
                 <CalendarCheck className="w-4 h-4" />
@@ -273,6 +276,7 @@ export const Navbar: React.FC = () => {
             ) : role === 'technician' && isAuthenticated ? (
               <Link
                 to="/technician/schedule"
+                state={primaryActiveBookingId ? { openBookingId: primaryActiveBookingId } : undefined}
                 className="px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold"
               >
                 Đang thực hiện ({activeJobsCount})

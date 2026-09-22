@@ -294,7 +294,7 @@ export const HomePage: React.FC = () => {
             {[
               {
                 step: '01',
-                title: 'Đăng nhu cầu',
+                title: 'Đăng yêu cầu',
                 desc: 'Mô tả sự cố, tải ảnh/video và khung giờ mong muốn.',
                 icon: Wrench,
               },
