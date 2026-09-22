@@ -3,20 +3,21 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { storageService } from '../../services/storageService';
 import { Avatar } from '../common/Avatar';
-import { 
-  LayoutDashboard, 
-  CalendarCheck, 
-  ClipboardList, 
-  MessageSquare, 
-  Star, 
-  UserCheck, 
-  Sparkles, 
-  Users, 
-  ShieldCheck, 
-  Layers, 
-  TrendingUp, 
-  Settings, 
-  SlidersHorizontal 
+import {
+  LayoutDashboard,
+  CalendarCheck,
+  ClipboardList,
+  MessageSquare,
+  Star,
+  UserCheck,
+  Sparkles,
+  Users,
+  ShieldCheck,
+  Layers,
+  TrendingUp,
+  Settings,
+  SlidersHorizontal,
+  History
 } from 'lucide-react';
 
 export const DashboardSidebar: React.FC = () => {
@@ -24,12 +25,16 @@ export const DashboardSidebar: React.FC = () => {
 
   const hasBookings = !!user && storageService.getBookings().some(b => b.customerId === user.id);
   const hasReviews = !!user && storageService.getReviews().some(r => r.customerId === user.id);
+  const hasCompletedOrders = !!user && storageService.getBookings().some(
+    b => b.customerId === user.id && (b.status === 'completed' || b.status === 'reviewed')
+  );
   const isNewAccount = !!user && (Date.now() - new Date(user.createdAt).getTime()) < 1000 * 60 * 60 * 24 * 7;
 
   const customerLinks = [
     { label: 'Tổng quan', path: '/customer/dashboard', icon: LayoutDashboard },
     { label: 'Yêu cầu của tôi', path: '/customer/requests', icon: ClipboardList },
     ...(hasBookings ? [{ label: 'Lịch hẹn sửa chữa', path: '/my-bookings', icon: CalendarCheck }] : []),
+    ...(hasCompletedOrders ? [{ label: 'Lịch sử & Bảo hành', path: '/order-history', icon: History }] : []),
     { label: 'Tin nhắn / Chat', path: '/chat', icon: MessageSquare },
     ...(hasReviews ? [{ label: 'Đánh giá & Review', path: '/reviews', icon: Star }] : []),
   ];

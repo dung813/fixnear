@@ -85,7 +85,9 @@ export const CustomerDashboardPage: React.FC = () => {
       case 'pending': return 1;
       case 'accepted': return 2;
       case 'surveying': return 3;
-      case 'in_progress': return 4;
+      case 'in_progress':
+      case 'quote_pending':
+      case 'payment_pending': return 4;
       case 'completed':
       case 'reviewed': return 5;
       default: return 1;
@@ -332,8 +334,14 @@ export const CustomerDashboardPage: React.FC = () => {
                             )}
                             <Badge
                               variant={
-                                bk.status === 'in_progress' || bk.status === 'surveying' || bk.status === 'accepted'
+                                bk.status === 'cancelled'
+                                  ? 'danger'
+                                  : bk.status === 'in_progress' || bk.status === 'surveying' || bk.status === 'accepted'
                                   ? 'success'
+                                  : bk.status === 'quote_pending'
+                                  ? 'warning'
+                                  : bk.status === 'payment_pending'
+                                  ? 'info'
                                   : bk.status === 'completed'
                                   ? 'info'
                                   : bk.status === 'reviewed'
@@ -351,8 +359,14 @@ export const CustomerDashboardPage: React.FC = () => {
                                 ? '3. Đang khảo sát'
                                 : bk.status === 'in_progress'
                                 ? '4. Đang thi công'
+                                : bk.status === 'quote_pending'
+                                ? 'Chờ duyệt báo giá'
+                                : bk.status === 'payment_pending'
+                                ? 'Chờ thanh toán'
                                 : bk.status === 'completed'
                                 ? '5. Hoàn thành (Chờ nghiệm thu)'
+                                : bk.status === 'cancelled'
+                                ? 'Đã hủy'
                                 : 'Đã nghiệm thu & Đánh giá'}
                             </Badge>
                           </div>
@@ -442,6 +456,15 @@ export const CustomerDashboardPage: React.FC = () => {
                                 Nghiệm thu & Viết đánh giá
                               </Button>
                             )}
+                            <Link to={`/my-bookings/${bk.id}`}>
+                              <Button size="sm" variant="outline" className="text-xs">
+                                {bk.status === 'quote_pending'
+                                  ? 'Xem báo giá'
+                                  : bk.status === 'payment_pending'
+                                  ? 'Thanh toán ngay'
+                                  : 'Theo dõi tiến độ'}
+                              </Button>
+                            </Link>
                           </div>
                         </div>
                       </div>

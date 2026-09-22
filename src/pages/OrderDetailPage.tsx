@@ -7,6 +7,9 @@ import { Booking } from '../types';
 import { Avatar } from '../components/common/Avatar';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
+import { QuotationModal } from '../components/orders/QuotationModal';
+import { PaymentModal } from '../components/orders/PaymentModal';
+import { ReviewModal } from '../components/technicians/ReviewModal';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import {
   ChevronLeft,
@@ -20,7 +23,9 @@ import {
   CheckCircle2,
   Truck,
   ClipboardCheck,
-  CalendarCheck
+  CalendarCheck,
+  FileCheck,
+  Wallet
 } from 'lucide-react';
 
 const STEPS = [
@@ -36,12 +41,33 @@ const getStepIndex = (status: Booking['status']): number => {
     case 'pending': return 0;
     case 'accepted': return 1;
     case 'surveying': return 2;
-    case 'in_progress': return 3;
+    case 'in_progress':
+    case 'quote_pending':
+    case 'payment_pending': return 3;
     case 'completed':
     case 'reviewed': return 4;
     case 'cancelled': return -1;
     default: return 0;
   }
+};
+
+const STATUS_LABELS: Record<Booking['status'], string> = {
+  pending: 'Đã đặt lịch',
+  accepted: 'Thợ đã tiếp nhận',
+  surveying: 'Đang di chuyển',
+  in_progress: 'Đang kiểm tra & sửa chữa',
+  quote_pending: 'Chờ duyệt báo giá',
+  payment_pending: 'Chờ thanh toán',
+  completed: 'Hoàn thành & Nghiệm thu',
+  reviewed: 'Hoàn thành & Nghiệm thu',
+  cancelled: 'Đã hủy',
+};
+
+const FINAL_PAYMENT_LABELS: Record<NonNullable<Booking['finalPaymentMethod']>, string> = {
+  momo: 'Ví MoMo',
+  vnpay: 'VNPay',
+  bank_transfer: 'Chuyển khoản ngân hàng',
+  card: 'Thẻ tín dụng/ghi nợ',
 };
 
 export const OrderDetailPage: React.FC = () => {
@@ -51,6 +77,10 @@ export const OrderDetailPage: React.FC = () => {
   const { success } = useNotification();
 
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [quotationOpen, setQuotationOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [hasAutoOpenedReview, setHasAutoOpenedReview] = useState(false);
 
   const loadBooking = () => {
     if (id) setBooking(storageService.getBookingById(id) ?? null);
@@ -61,6 +91,17 @@ export const OrderDetailPage: React.FC = () => {
     window.addEventListener('fixnear_storage_update', loadBooking);
     return () => window.removeEventListener('fixnear_storage_update', loadBooking);
   }, [id]);
+
+  // Auto-prompt for a review the first time this order shows up as completed
+  useEffect(() => {
+    if (!booking || hasAutoOpenedReview) return;
+    if (booking.status !== 'completed') return;
+    const alreadyReviewed = storageService.getReviews().some(r => r.bookingId === booking.id);
+    if (!alreadyReviewed) {
+      setReviewOpen(true);
+    }
+    setHasAutoOpenedReview(true);
+  }, [booking, hasAutoOpenedReview]);
 
   if (!booking) {
     return (
@@ -112,11 +153,23 @@ export const OrderDetailPage: React.FC = () => {
             <h1 className="text-lg font-extrabold text-slate-900">{booking.id}</h1>
           </div>
           <Badge
-            variant={isCancelled ? 'danger' : stepIndex >= 4 ? 'primary' : stepIndex >= 1 ? 'success' : 'warning'}
+            variant={
+              isCancelled
+                ? 'danger'
+                : booking.status === 'quote_pending'
+                ? 'warning'
+                : booking.status === 'payment_pending'
+                ? 'info'
+                : stepIndex >= 4
+                ? 'primary'
+                : stepIndex >= 1
+                ? 'success'
+                : 'warning'
+            }
             size="md"
             dot
           >
-            {isCancelled ? 'Đã hủy' : STEPS[Math.max(stepIndex, 0)]?.label}
+            {STATUS_LABELS[booking.status]}
           </Badge>
         </div>
         <p className="text-xs text-slate-500">{booking.serviceName}</p>
@@ -161,6 +214,30 @@ export const OrderDetailPage: React.FC = () => {
             <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-2 text-xs text-blue-800 font-semibold">
               <Truck className="w-4 h-4" />
               Thợ dự kiến có mặt sau khoảng 15-20 phút nữa.
+            </div>
+          )}
+
+          {booking.status === 'quote_pending' && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-amber-800 font-semibold">
+                <FileCheck className="w-4 h-4 shrink-0" />
+                Thợ đã gửi báo giá chi tiết, vui lòng xem và duyệt để tiếp tục sửa chữa.
+              </div>
+              <Button size="sm" onClick={() => setQuotationOpen(true)} className="font-bold shrink-0">
+                Xem báo giá
+              </Button>
+            </div>
+          )}
+
+          {booking.status === 'payment_pending' && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-blue-800 font-semibold">
+                <Wallet className="w-4 h-4 shrink-0" />
+                Báo giá đã được duyệt, vui lòng thanh toán để hoàn tất đơn hàng.
+              </div>
+              <Button size="sm" onClick={() => setPaymentOpen(true)} className="font-bold shrink-0">
+                Thanh toán ngay
+              </Button>
             </div>
           )}
         </div>
@@ -233,18 +310,33 @@ export const OrderDetailPage: React.FC = () => {
           <div>
             <span className="text-slate-400 block font-medium mb-0.5">Chi phí</span>
             <span className="text-sm font-extrabold text-blue-600">
-              {formatCurrency(booking.finalPrice || booking.estimatedPrice)}
+              {formatCurrency(booking.finalPrice || booking.quotation?.totalAmount || booking.estimatedPrice)}
             </span>
           </div>
           <div>
             <span className="text-slate-400 block font-medium mb-0.5">Thanh toán</span>
             <span className="font-bold text-slate-900 flex items-center gap-1.5">
-              {booking.paymentMethod === 'escrow' && <Lock className="w-3.5 h-3.5 text-blue-600" />}
-              {booking.paymentMethod === 'escrow'
-                ? (booking.paymentStatus === 'released' ? 'Đã thanh toán Escrow' : 'Ký quỹ Escrow (đang tạm giữ)')
-                : 'Tiền mặt sau khi hoàn thành'}
+              {booking.finalPaymentMethod ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Đã thanh toán qua {FINAL_PAYMENT_LABELS[booking.finalPaymentMethod]}
+                </>
+              ) : (
+                <>
+                  {booking.paymentMethod === 'escrow' && <Lock className="w-3.5 h-3.5 text-blue-600" />}
+                  {booking.paymentMethod === 'escrow'
+                    ? (booking.paymentStatus === 'released' ? 'Đã thanh toán Escrow' : 'Ký quỹ Escrow (đang tạm giữ)')
+                    : 'Tiền mặt sau khi hoàn thành'}
+                </>
+              )}
             </span>
           </div>
+          {booking.invoiceId && (
+            <div>
+              <span className="text-slate-400 block font-medium mb-0.5">Mã hóa đơn điện tử</span>
+              <span className="font-bold text-slate-900">{booking.invoiceId}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -260,7 +352,35 @@ export const OrderDetailPage: React.FC = () => {
             Hủy đơn
           </Button>
         )}
+        {(booking.status === 'completed' || booking.status === 'reviewed') &&
+          !storageService.getReviews().some(r => r.bookingId === booking.id) && (
+            <Button onClick={() => setReviewOpen(true)} className="font-bold">
+              Đánh giá dịch vụ
+            </Button>
+        )}
       </div>
+
+      {/* Quotation Approval Modal */}
+      <QuotationModal
+        isOpen={quotationOpen}
+        onClose={() => setQuotationOpen(false)}
+        booking={booking}
+        onApproved={() => setPaymentOpen(true)}
+      />
+
+      {/* Payment Gateway Modal */}
+      <PaymentModal
+        isOpen={paymentOpen}
+        onClose={() => setPaymentOpen(false)}
+        booking={booking}
+      />
+
+      {/* Review Modal (auto-opens once when order completes) */}
+      <ReviewModal
+        isOpen={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        booking={booking}
+      />
     </div>
   );
 };

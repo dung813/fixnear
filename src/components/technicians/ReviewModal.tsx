@@ -6,7 +6,13 @@ import { storageService } from '../../services/storageService';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { RatingStars } from '../common/RatingStars';
-import { Star, ThumbsUp } from 'lucide-react';
+import { Star, ThumbsUp, Upload } from 'lucide-react';
+
+const SAMPLE_ACCEPTANCE_PHOTOS = [
+  'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&q=80',
+  'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&q=80',
+  'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=600&q=80',
+];
 
 export interface ReviewModalProps {
   isOpen: boolean;
@@ -30,9 +36,15 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const [punctuality, setPunctuality] = useState<number>(5);
   const [pricing, setPricing] = useState<number>(5);
   const [comment, setComment] = useState<string>('');
+  const [photos, setPhotos] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   if (!booking) return null;
+
+  const handleUploadPhoto = () => {
+    const photo = SAMPLE_ACCEPTANCE_PHOTOS[Math.floor(Math.random() * SAMPLE_ACCEPTANCE_PHOTOS.length)];
+    setPhotos(prev => [...prev, photo]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,12 +74,15 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         },
         comment: comment.trim(),
         serviceName: booking.serviceName,
+        photos: photos.length > 0 ? photos : undefined,
         createdAt: new Date().toISOString(),
       };
 
       storageService.addReview(newReview);
       setIsSubmitting(false);
       success('Cảm ơn bạn đã gửi đánh giá!', 'Đánh giá đã được đăng lên hồ sơ thợ.');
+      setComment('');
+      setPhotos([]);
       onClose();
       if (onSuccess) onSuccess();
     }, 500);
@@ -124,6 +139,35 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-800 focus:border-blue-600 focus:outline-none"
             required
           />
+        </div>
+
+        {/* Acceptance Photos Upload */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            Ảnh chụp kết quả nghiệm thu thực tế (nếu có):
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {photos.map((p, i) => (
+              <div key={i} className="relative rounded-lg overflow-hidden aspect-video border border-slate-200">
+                <img src={p} alt={`Ảnh nghiệm thu ${i + 1}`} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                  className="absolute top-1 right-1 bg-slate-900/70 text-white rounded-full p-1 text-[9px]"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={handleUploadPhoto}
+              className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-lg p-2 text-slate-500 hover:text-blue-600 transition aspect-video"
+            >
+              <Upload className="w-4 h-4 mb-0.5" />
+              <span className="text-[10px] font-medium">Thêm ảnh</span>
+            </button>
+          </div>
         </div>
 
         {/* Buttons */}

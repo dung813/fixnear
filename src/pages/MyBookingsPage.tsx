@@ -123,8 +123,14 @@ export const MyBookingsPage: React.FC = () => {
 
                 <Badge
                   variant={
-                    bk.status === 'accepted' || bk.status === 'in_progress'
+                    bk.status === 'cancelled'
+                      ? 'danger'
+                      : bk.status === 'accepted' || bk.status === 'in_progress' || bk.status === 'surveying'
                       ? 'success'
+                      : bk.status === 'quote_pending'
+                      ? 'warning'
+                      : bk.status === 'payment_pending'
+                      ? 'info'
                       : bk.status === 'completed'
                       ? 'info'
                       : bk.status === 'reviewed'
@@ -138,10 +144,18 @@ export const MyBookingsPage: React.FC = () => {
                     ? 'Chờ xác nhận'
                     : bk.status === 'accepted'
                     ? 'Đã chốt lịch'
+                    : bk.status === 'surveying'
+                    ? 'Thợ đang di chuyển'
                     : bk.status === 'in_progress'
                     ? 'Đang thực hiện'
+                    : bk.status === 'quote_pending'
+                    ? 'Chờ duyệt báo giá'
+                    : bk.status === 'payment_pending'
+                    ? 'Chờ thanh toán'
                     : bk.status === 'completed'
                     ? 'Hoàn thành'
+                    : bk.status === 'cancelled'
+                    ? 'Đã hủy'
                     : 'Đã đánh giá'}
                 </Badge>
               </div>

@@ -122,17 +122,45 @@ export interface ServiceRequest {
   createdAt: string;
 }
 
-export type BookingStatus = 
-  | 'pending'      // Chờ xác nhận
-  | 'accepted'     // Đã xác nhận
-  | 'surveying'    // Đang khảo sát tại nhà
-  | 'in_progress'  // Đang thi công
-  | 'completed'    // Đã hoàn thành (chờ đánh giá/nghiệm thu)
-  | 'cancelled'    // Đã hủy
-  | 'reviewed';    // Đã đánh giá
+export type BookingStatus =
+  | 'pending'         // Chờ xác nhận
+  | 'accepted'        // Đã xác nhận
+  | 'surveying'       // Đang khảo sát tại nhà
+  | 'in_progress'     // Đang thi công
+  | 'quote_pending'   // Chờ khách duyệt báo giá phát sinh
+  | 'payment_pending' // Đã duyệt báo giá, chờ thanh toán
+  | 'completed'       // Đã hoàn thành (chờ đánh giá/nghiệm thu)
+  | 'cancelled'       // Đã hủy
+  | 'reviewed';       // Đã đánh giá
 
 export type PaymentMethod = 'escrow' | 'cash';
 export type PaymentStatus = 'holding_escrow' | 'released' | 'refunded' | 'cash_on_delivery';
+export type FinalPaymentMethod = 'momo' | 'vnpay' | 'bank_transfer' | 'card';
+
+export interface QuotationPart {
+  id: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+export interface QuotationExtraCharge {
+  id: string;
+  description: string;
+  reason: string;
+  amount: number;
+  photos: string[];
+}
+
+export interface Quotation {
+  laborCost: number;
+  parts: QuotationPart[];
+  extraCharges: QuotationExtraCharge[];
+  totalAmount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  customerFeedback?: string;
+  createdAt: string;
+}
 
 export interface Booking {
   id: string;
@@ -161,10 +189,28 @@ export interface Booking {
   escrowAmount?: number;
   warrantyMonths: number;
   status: BookingStatus;
+  quotation?: Quotation;
+  finalPaymentMethod?: FinalPaymentMethod;
+  invoiceId?: string;
   createdAt: string;
   surveyAt?: string;
   inProgressAt?: string;
+  quotedAt?: string;
+  paidAt?: string;
   completedAt?: string;
+}
+
+export interface WarrantyClaim {
+  id: string;
+  bookingId: string;
+  customerId: string;
+  technicianId: string;
+  technicianName: string;
+  description: string;
+  photos: string[];
+  preferredDate: string;
+  status: 'pending' | 'scheduled' | 'resolved';
+  createdAt: string;
 }
 
 export interface ReviewRatings {

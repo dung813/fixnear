@@ -9,7 +9,10 @@ import {
   ServiceCategory,
   DisputeTicket,
   EQuote,
-  Address
+  Address,
+  Quotation,
+  FinalPaymentMethod,
+  WarrantyClaim
 } from '../types';
 import {
   INITIAL_CATEGORIES,
@@ -36,6 +39,7 @@ const STORAGE_KEYS = {
   MESSAGES: 'fixnear_messages',
   DISPUTES: 'fixnear_disputes',
   ADDRESSES: 'fixnear_addresses',
+  WARRANTY_CLAIMS: 'fixnear_warranty_claims',
 };
 
 // Initialize DB with seed data if not present
@@ -72,6 +76,9 @@ export const initializeStorage = () => {
   }
   if (!localStorage.getItem(STORAGE_KEYS.ADDRESSES)) {
     localStorage.setItem(STORAGE_KEYS.ADDRESSES, JSON.stringify(INITIAL_ADDRESSES));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.WARRANTY_CLAIMS)) {
+    localStorage.setItem(STORAGE_KEYS.WARRANTY_CLAIMS, JSON.stringify([]));
   }
 };
 
@@ -173,7 +180,7 @@ export const storageService = {
     if (idx !== -1) {
       const now = new Date().toISOString();
       const current = list[idx];
-      
+
       list[idx] = {
         ...current,
         status,
@@ -185,6 +192,71 @@ export const storageService = {
       };
       setItem(STORAGE_KEYS.BOOKINGS, list);
     }
+  },
+
+  // Quotation approval (phát sinh vật tư / chi phí trong quá trình sửa chữa)
+  submitQuotation(bookingId: string, quotation: Omit<Quotation, 'status' | 'createdAt'>): void {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        status: 'quote_pending',
+        quotation: { ...quotation, status: 'pending', createdAt: new Date().toISOString() },
+        quotedAt: new Date().toISOString(),
+      };
+      setItem(STORAGE_KEYS.BOOKINGS, list);
+    }
+  },
+  respondToQuotation(bookingId: string, approve: boolean, feedback?: string): void {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    if (idx !== -1 && list[idx].quotation) {
+      list[idx] = {
+        ...list[idx],
+        status: approve ? 'payment_pending' : 'quote_pending',
+        quotation: {
+          ...list[idx].quotation!,
+          status: approve ? 'approved' : 'rejected',
+          customerFeedback: feedback,
+        },
+      };
+      setItem(STORAGE_KEYS.BOOKINGS, list);
+    }
+  },
+
+  // Final payment via the mock payment gateway (Momo / VNPay / Bank Transfer / Card)
+  completePayment(bookingId: string, method: FinalPaymentMethod): string {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    const invoiceId = `INV-${Date.now()}`;
+    if (idx !== -1) {
+      const current = list[idx];
+      const finalAmount = current.quotation?.totalAmount ?? current.estimatedPrice;
+      list[idx] = {
+        ...current,
+        status: 'completed',
+        finalPrice: finalAmount,
+        finalPaymentMethod: method,
+        paymentStatus: 'released',
+        invoiceId,
+        paidAt: new Date().toISOString(),
+        completedAt: current.completedAt ?? new Date().toISOString(),
+      };
+      setItem(STORAGE_KEYS.BOOKINGS, list);
+    }
+    return invoiceId;
+  },
+
+  // Warranty Claims
+  getWarrantyClaims(customerId?: string): WarrantyClaim[] {
+    const list = getItem<WarrantyClaim[]>(STORAGE_KEYS.WARRANTY_CLAIMS, []);
+    return customerId ? list.filter(w => w.customerId === customerId) : list;
+  },
+  addWarrantyClaim(claim: WarrantyClaim): void {
+    const list = getItem<WarrantyClaim[]>(STORAGE_KEYS.WARRANTY_CLAIMS, []);
+    list.unshift(claim);
+    setItem(STORAGE_KEYS.WARRANTY_CLAIMS, list);
   },
 
   // Reviews
@@ -345,6 +417,7 @@ export const storageService = {
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
     localStorage.removeItem(STORAGE_KEYS.DISPUTES);
     localStorage.removeItem(STORAGE_KEYS.ADDRESSES);
+    localStorage.removeItem(STORAGE_KEYS.WARRANTY_CLAIMS);
     initializeStorage();
     window.location.reload();
   }
