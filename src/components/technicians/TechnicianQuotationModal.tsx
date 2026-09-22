@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Booking, QuotationPart, QuotationExtraCharge } from '../../types';
 import { storageService } from '../../services/storageService';
 import { useNotification } from '../../context/NotificationContext';
@@ -35,6 +35,20 @@ export const TechnicianQuotationModal: React.FC<TechnicianQuotationModalProps> =
   const [completionPhotos, setCompletionPhotos] = useState<string[]>([]);
   const [warrantyMonths, setWarrantyMonths] = useState('6');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Default the labor cost to the booking's category starting price, so it
+  // always reflects the current real-world price table instead of a stale flat guess.
+  useEffect(() => {
+    if (booking) {
+      const category = storageService.getCategories().find(c => c.slug === booking.categoryId);
+      setLaborCost(String(category?.startingPrice ?? 150000));
+      setParts([]);
+      setExtraCharges([]);
+      setCompletionPhotos([]);
+      setWarrantyMonths('6');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?.id]);
 
   if (!booking) return null;
 
