@@ -7,14 +7,17 @@ import { BookingModal } from '../components/technicians/BookingModal';
 import { CompareModal } from '../components/technicians/CompareModal';
 import { Button } from '../components/common/Button';
 import { formatCurrency } from '../utils/formatters';
-import { 
-  Search, 
-  Filter, 
-  SlidersHorizontal, 
-  RotateCcw, 
+import {
+  Search,
+  Filter,
+  SlidersHorizontal,
+  RotateCcw,
   ArrowUpDown,
-  Scale
+  Scale,
+  CalendarCheck
 } from 'lucide-react';
+
+const todayISO = () => new Date().toISOString().split('T')[0];
 
 export const FindTechniciansPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,9 +40,12 @@ export const FindTechniciansPage: React.FC = () => {
   const [maxDistance, setMaxDistance] = useState<number>(10);
   const [minRating, setMinRating] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(500000);
+  const [minExperience, setMinExperience] = useState<number>(0);
+  const [availabilityMode, setAvailabilityMode] = useState<'any' | 'today' | 'date'>('any');
+  const [availabilityDate, setAvailabilityDate] = useState<string>(todayISO());
   const [onlyAvailable, setOnlyAvailable] = useState<boolean>(false);
   const [onlyVerified, setOnlyVerified] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<string>('ratingDesc');
+  const [sortBy, setSortBy] = useState<string>('recommended');
 
   useEffect(() => {
     setTechnicians(storageService.getTechnicians());
@@ -68,6 +74,14 @@ export const FindTechniciansPage: React.FC = () => {
     }
     return ['Tất cả'];
   }, [selectedCity]);
+
+  // Compute a 0-100 "match score" combining proximity, rating and open-schedule signals
+  const getMatchScore = (t: Technician): number => {
+    const distanceScore = Math.max(0, 1 - t.distanceKm / 15); // closer is better
+    const ratingScore = t.rating / 5;
+    const availableToday = t.availableDates.includes(todayISO()) ? 1 : 0;
+    return distanceScore * 35 + ratingScore * 45 + availableToday * 20;
+  };
 
   // Filtered & Sorted Technicians
   const filteredTechs = useMemo(() => {
@@ -113,6 +127,19 @@ export const FindTechniciansPage: React.FC = () => {
           return false;
         }
 
+        // Experience years
+        if (t.experienceYears < minExperience) {
+          return false;
+        }
+
+        // Availability schedule
+        if (availabilityMode === 'today' && !t.availableDates.includes(todayISO())) {
+          return false;
+        }
+        if (availabilityMode === 'date' && !t.availableDates.includes(availabilityDate)) {
+          return false;
+        }
+
         // Only Available / Online
         if (onlyAvailable && !t.isAvailable) {
           return false;
@@ -126,6 +153,7 @@ export const FindTechniciansPage: React.FC = () => {
         return true;
       })
       .sort((a: Technician, b: Technician) => {
+        if (sortBy === 'recommended') return getMatchScore(b) - getMatchScore(a);
         if (sortBy === 'distanceAsc') return a.distanceKm - b.distanceKm;
         if (sortBy === 'ratingDesc') return b.rating - a.rating;
         if (sortBy === 'jobsDesc') return b.completedJobs - a.completedJobs;
@@ -141,6 +169,9 @@ export const FindTechniciansPage: React.FC = () => {
     maxDistance,
     minRating,
     maxPrice,
+    minExperience,
+    availabilityMode,
+    availabilityDate,
     onlyAvailable,
     onlyVerified,
     sortBy,
@@ -154,9 +185,12 @@ export const FindTechniciansPage: React.FC = () => {
     setMaxDistance(10);
     setMinRating(0);
     setMaxPrice(500000);
+    setMinExperience(0);
+    setAvailabilityMode('any');
+    setAvailabilityDate(todayISO());
     setOnlyAvailable(false);
     setOnlyVerified(false);
-    setSortBy('ratingDesc');
+    setSortBy('recommended');
     setSearchParams({});
   };
 
@@ -365,6 +399,71 @@ export const FindTechniciansPage: React.FC = () => {
             />
           </div>
 
+          {/* Experience Years Filter */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Năm kinh nghiệm
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Tất cả', val: 0 },
+                { label: '3+ năm', val: 3 },
+                { label: '5+ năm', val: 5 },
+                { label: '8+ năm', val: 8 },
+              ].map(r => (
+                <button
+                  key={r.val}
+                  type="button"
+                  onClick={() => setMinExperience(r.val)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    minExperience === r.val
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Availability / Schedule Filter */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <CalendarCheck className="w-3.5 h-3.5 text-blue-600" />
+              Trạng thái lịch rảnh
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Bất kỳ', val: 'any' as const },
+                { label: 'Rảnh hôm nay', val: 'today' as const },
+                { label: 'Chọn ngày', val: 'date' as const },
+              ].map(opt => (
+                <button
+                  key={opt.val}
+                  type="button"
+                  onClick={() => setAvailabilityMode(opt.val)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    availabilityMode === opt.val
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {availabilityMode === 'date' && (
+              <input
+                type="date"
+                value={availabilityDate}
+                min={todayISO()}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAvailabilityDate(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-800 focus:border-blue-600 focus:outline-none"
+              />
+            )}
+          </div>
+
           {/* Checkbox Toggles */}
           <div className="space-y-2 pt-2 border-t border-slate-100">
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -409,6 +508,7 @@ export const FindTechniciansPage: React.FC = () => {
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value)}
                 className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer"
               >
+                <option value="recommended">✨ Đề xuất phù hợp nhất</option>
                 <option value="ratingDesc">Đánh giá cao nhất</option>
                 <option value="distanceAsc">Gần bạn nhất</option>
                 <option value="jobsDesc">Nhiều đơn hoàn thành nhất</option>

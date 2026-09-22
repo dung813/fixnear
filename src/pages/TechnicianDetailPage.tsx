@@ -9,17 +9,20 @@ import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { BookingModal } from '../components/technicians/BookingModal';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { 
-  ShieldCheck, 
-  MapPin, 
-  Clock, 
-  CheckCircle2, 
-  MessageSquare, 
-  Phone, 
-  Sparkles, 
-  Award, 
+import {
+  ShieldCheck,
+  MapPin,
+  Clock,
+  CheckCircle2,
+  MessageSquare,
+  Phone,
+  Sparkles,
+  Award,
   Image as ImageIcon,
-  ChevronLeft
+  ChevronLeft,
+  TrendingUp,
+  Timer,
+  Briefcase
 } from 'lucide-react';
 
 export const TechnicianDetailPage: React.FC = () => {
@@ -210,6 +213,25 @@ export const TechnicianDetailPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Section 1b: Activity Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-card text-center space-y-1">
+              <Briefcase className="w-5 h-5 text-blue-600 mx-auto" />
+              <div className="text-lg sm:text-xl font-extrabold text-slate-900">{technician.completedJobs}</div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500">Đơn hoàn thành</div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-card text-center space-y-1">
+              <TrendingUp className="w-5 h-5 text-emerald-600 mx-auto" />
+              <div className="text-lg sm:text-xl font-extrabold text-slate-900">{technician.completionRate}%</div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500">Tỷ lệ hoàn thành</div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-card text-center space-y-1">
+              <Timer className="w-5 h-5 text-amber-600 mx-auto" />
+              <div className="text-lg sm:text-xl font-extrabold text-slate-900">~{technician.responseTimeMinutes}p</div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500">Phản hồi trung bình</div>
+            </div>
+          </div>
+
           {/* Section 2: Service Catalog & Pricing Table */}
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-card space-y-4">
             <div className="flex items-center justify-between">
@@ -311,6 +333,17 @@ export const TechnicianDetailPage: React.FC = () => {
                   <p className="text-xs text-slate-700 leading-relaxed">
                     {rev.comment}
                   </p>
+
+                  {/* Review Photos (real acceptance photos) */}
+                  {rev.photos && rev.photos.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {rev.photos.map((photo: string, i: number) => (
+                        <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+                          <img src={photo} alt={`Ảnh nghiệm thu ${i + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Technician Reply */}
                   {rev.technicianReply && (

@@ -112,6 +112,11 @@ export const TechnicianRegisterPage: React.FC = () => {
         email: email.trim(),
         responseTimeMinutes: 10,
         joinedDate: new Date().toISOString().split('T')[0],
+        availableDates: Array.from({ length: 7 }, (_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() + i);
+          return d.toISOString().split('T')[0];
+        }),
       };
 
       storageService.addUser(newUser);

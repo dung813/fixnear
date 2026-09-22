@@ -30,6 +30,8 @@ export const TechCard: React.FC<TechCardProps> = ({
   onCompareToggle,
   isComparing = false,
 }) => {
+  const isAvailableToday = technician.availableDates.includes(new Date().toISOString().split('T')[0]);
+
   return (
     <div className={`bg-white rounded-2xl border ${isComparing ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-200/80'} p-5 shadow-card hover:shadow-card-hover transition-all duration-200 flex flex-col justify-between group relative overflow-hidden`}>
       
@@ -95,6 +97,11 @@ export const TechCard: React.FC<TechCardProps> = ({
           {technician.responseTimeMinutes <= 10 && (
             <Badge variant="success" size="sm" className="text-[10px]">
               Phản hồi &lt; 10p
+            </Badge>
+          )}
+          {isAvailableToday && (
+            <Badge variant="info" size="sm" className="text-[10px]">
+              🗓️ Rảnh hôm nay
             </Badge>
           )}
         </div>

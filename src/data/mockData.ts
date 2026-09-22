@@ -12,6 +12,12 @@ import {
   Address
 } from '../types';
 
+function dateOffset(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
 export const INITIAL_CATEGORIES: ServiceCategory[] = [
   {
     id: 'cat-1',
@@ -176,6 +182,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
     email: 'minh.dienlanh@fixnear.vn',
     responseTimeMinutes: 10,
     joinedDate: '2023-03-15',
+    availableDates: [dateOffset(0), dateOffset(1), dateOffset(3), dateOffset(4), dateOffset(6)],
   },
   {
     id: 'tech-2',
@@ -215,6 +222,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
     email: 'hung.thodien@fixnear.vn',
     responseTimeMinutes: 15,
     joinedDate: '2023-05-20',
+    availableDates: [dateOffset(1), dateOffset(2), dateOffset(5), dateOffset(7)],
   },
   {
     id: 'tech-3',
@@ -253,6 +261,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
     email: 'tuan.thonuoc@fixnear.vn',
     responseTimeMinutes: 12,
     joinedDate: '2023-01-10',
+    availableDates: [dateOffset(0), dateOffset(2), dateOffset(3), dateOffset(5), dateOffset(6)],
   },
   {
     id: 'tech-4',
@@ -290,6 +299,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
     email: 'hoang.khoa@fixnear.vn',
     responseTimeMinutes: 8,
     joinedDate: '2023-08-01',
+    availableDates: [dateOffset(0), dateOffset(1), dateOffset(2), dateOffset(3), dateOffset(4), dateOffset(5), dateOffset(6)],
   },
   {
     id: 'tech-5',
@@ -327,6 +337,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
     email: 'bao.inverter@fixnear.vn',
     responseTimeMinutes: 15,
     joinedDate: '2023-04-12',
+    availableDates: [dateOffset(2), dateOffset(3), dateOffset(6)],
   },
   {
     id: 'tech-6',
@@ -364,6 +375,7 @@ export const INITIAL_TECHNICIANS: Technician[] = [
     email: 'tung.xemay@fixnear.vn',
     responseTimeMinutes: 10,
     joinedDate: '2023-07-19',
+    availableDates: [dateOffset(0), dateOffset(1), dateOffset(4)],
   }
 ];
 
@@ -571,16 +583,163 @@ export const INITIAL_REVIEWS: Review[] = [
     customerName: 'Hoàng Thùy Linh',
     customerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
     rating: 5,
-    ratings: {
-      quality: 5,
-      attitude: 5,
-      punctuality: 5,
-      pricing: 5,
-    },
+    ratings: { quality: 5, attitude: 5, punctuality: 5, pricing: 5 },
     comment: 'Anh Minh đến đúng hẹn, vệ sinh điều hòa rất sạch sẽ, có bạt hứng nước cẩn thận không làm ướt sàn gỗ. Máy sau khi bảo dưỡng chạy êm ru và mát lạnh ngay lập tức. Sẽ tiếp tục ủng hộ!',
     serviceName: 'Vệ sinh bảo dưỡng điều hòa treo tường',
+    photos: ['https://images.unsplash.com/photo-1614633833026-07204217f39c?w=600&q=80'],
     createdAt: '2026-08-20T14:30:00Z',
     technicianReply: 'Cảm ơn chị Linh đã tin tưởng dịch vụ. Nếu máy có vấn đề gì chị cứ gọi em theo số hotline trên phiếu bảo hành nhé!'
+  },
+  {
+    id: 'rev-2',
+    bookingId: 'bk-historical-1',
+    technicianId: 'tech-1',
+    customerId: 'user-cust-2',
+    customerName: 'Phạm Minh Trí',
+    customerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80',
+    rating: 5,
+    ratings: { quality: 5, attitude: 5, punctuality: 4, pricing: 5 },
+    comment: 'Nạp gas xong máy lạnh sâu hẳn, giá cả rõ ràng ngay từ đầu không phát sinh thêm.',
+    serviceName: 'Nạp gas bổ sung R32/R410A',
+    createdAt: '2026-07-30T10:00:00Z',
+  },
+  {
+    id: 'rev-3',
+    bookingId: 'bk-historical-2',
+    technicianId: 'tech-2',
+    customerId: 'user-cust-2',
+    customerName: 'Phạm Minh Trí',
+    customerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80',
+    rating: 5,
+    ratings: { quality: 5, attitude: 5, punctuality: 5, pricing: 4 },
+    comment: 'Anh Hùng xử lý chập điện rất nhanh và giải thích rõ nguyên nhân, còn tư vấn cách phòng tránh lần sau. Rất chuyên nghiệp.',
+    serviceName: 'Tìm và xử lý chập nổ điện cục bộ',
+    photos: ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&q=80'],
+    createdAt: '2026-08-10T16:20:00Z',
+    technicianReply: 'Cảm ơn anh Trí, nhà mình nên thay aptomat chống giật để an toàn hơn về sau nhé!'
+  },
+  {
+    id: 'rev-4',
+    bookingId: 'bk-historical-3',
+    technicianId: 'tech-2',
+    customerId: 'user-cust-1',
+    customerName: 'Hoàng Thùy Linh',
+    customerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+    rating: 4,
+    ratings: { quality: 4, attitude: 5, punctuality: 4, pricing: 4 },
+    comment: 'Lắp quạt trần chắc chắn, gọn gàng. Đến hơi trễ 15 phút so với hẹn nhưng có báo trước.',
+    serviceName: 'Lắp đặt quạt trần Panasonic/KDK',
+    createdAt: '2026-07-15T09:00:00Z',
+  },
+  {
+    id: 'rev-5',
+    bookingId: 'bk-historical-4',
+    technicianId: 'tech-3',
+    customerId: 'user-cust-1',
+    customerName: 'Hoàng Thùy Linh',
+    customerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+    rating: 5,
+    ratings: { quality: 5, attitude: 5, punctuality: 5, pricing: 5 },
+    comment: 'Thông tắc bồn cầu sạch triệt để bằng máy lò xo, không đục phá gì cả. Dọn dẹp sạch sẽ sau khi làm xong.',
+    serviceName: 'Thông tắc bồn cầu, chậu rửa bát bằng máy lò xo',
+    photos: [
+      'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&q=80',
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&q=80'
+    ],
+    createdAt: '2026-08-05T11:00:00Z',
+    technicianReply: 'Cảm ơn chị Linh, có gì cứ nhắn em hỗ trợ tiếp nhé!'
+  },
+  {
+    id: 'rev-6',
+    bookingId: 'bk-historical-5',
+    technicianId: 'tech-3',
+    customerId: 'user-cust-2',
+    customerName: 'Phạm Minh Trí',
+    customerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80',
+    rating: 5,
+    ratings: { quality: 5, attitude: 4, punctuality: 5, pricing: 5 },
+    comment: 'Dò được điểm rò rỉ nước âm tường chính xác chỉ trong 20 phút, xử lý gọn không đục phá nhiều.',
+    serviceName: 'Sửa đường ống nước bục vỡ, rò rỉ âm tường',
+    createdAt: '2026-06-28T14:00:00Z',
+  },
+  {
+    id: 'rev-7',
+    bookingId: 'bk-historical-6',
+    technicianId: 'tech-4',
+    customerId: 'user-cust-1',
+    customerName: 'Hoàng Thùy Linh',
+    customerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+    rating: 5,
+    ratings: { quality: 5, attitude: 5, punctuality: 5, pricing: 5 },
+    comment: 'Khóa cửa bị kẹt lúc nửa đêm, gọi là có mặt sau 15 phút thật sự. Mở khóa không làm hỏng ổ, giá đúng như báo trước.',
+    serviceName: 'Mở khóa cửa nhà bấm / gạt kẹt chìa',
+    createdAt: '2026-08-12T23:40:00Z',
+  },
+  {
+    id: 'rev-8',
+    bookingId: 'bk-historical-7',
+    technicianId: 'tech-4',
+    customerId: 'user-cust-2',
+    customerName: 'Phạm Minh Trí',
+    customerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80',
+    rating: 4,
+    ratings: { quality: 4, attitude: 5, punctuality: 4, pricing: 4 },
+    comment: 'Lắp khóa vân tay mới hoạt động ổn định, hướng dẫn dùng app khá kỹ.',
+    serviceName: 'Lắp đặt khóa cửa thông minh vân tay',
+    createdAt: '2026-07-02T10:30:00Z',
+  },
+  {
+    id: 'rev-9',
+    bookingId: 'bk-historical-8',
+    technicianId: 'tech-5',
+    customerId: 'user-cust-1',
+    customerName: 'Hoàng Thùy Linh',
+    customerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+    rating: 5,
+    ratings: { quality: 5, attitude: 5, punctuality: 5, pricing: 5 },
+    comment: 'Máy giặt Electrolux báo lỗi IE được xử lý dứt điểm, thợ giải thích cặn kẽ nguyên nhân do lưới lọc bẩn.',
+    serviceName: 'Sửa lỗi máy giặt báo mã lỗi IE, OE, LE',
+    photos: ['https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=600&q=80'],
+    createdAt: '2026-08-01T09:15:00Z',
+  },
+  {
+    id: 'rev-10',
+    bookingId: 'bk-historical-9',
+    technicianId: 'tech-5',
+    customerId: 'user-cust-2',
+    customerName: 'Phạm Minh Trí',
+    customerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80',
+    rating: 5,
+    ratings: { quality: 5, attitude: 4, punctuality: 5, pricing: 5 },
+    comment: 'Tủ lạnh Side-by-Side không đông đá được sửa nhanh gọn trong buổi sáng, đúng hẹn.',
+    serviceName: 'Sửa tủ lạnh không đông đá, hỏng sensor',
+    createdAt: '2026-07-20T08:45:00Z',
+  },
+  {
+    id: 'rev-11',
+    bookingId: 'bk-historical-10',
+    technicianId: 'tech-6',
+    customerId: 'user-cust-1',
+    customerName: 'Hoàng Thùy Linh',
+    customerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+    rating: 4,
+    ratings: { quality: 4, attitude: 5, punctuality: 4, pricing: 4 },
+    comment: 'Vá xe tận nơi nhanh, giá hợp lý. Xe chạy êm lại bình thường.',
+    serviceName: 'Vá ép săm lốp xe ga / xe số tận nơi',
+    createdAt: '2026-08-15T18:00:00Z',
+  },
+  {
+    id: 'rev-12',
+    bookingId: 'bk-historical-11',
+    technicianId: 'tech-6',
+    customerId: 'user-cust-2',
+    customerName: 'Phạm Minh Trí',
+    customerAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80',
+    rating: 5,
+    ratings: { quality: 5, attitude: 5, punctuality: 5, pricing: 5 },
+    comment: 'Xe chết máy giữa đường do ngập nước, thợ đến cứu hộ và sửa tại chỗ chạy được luôn, rất kịp thời.',
+    serviceName: 'Sửa xe chết máy do ngập nước / Bugi',
+    createdAt: '2026-06-18T19:30:00Z',
   }
 ];
 

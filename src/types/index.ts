@@ -63,6 +63,7 @@ export interface Technician {
   email: string;
   responseTimeMinutes: number;
   joinedDate: string;
+  availableDates: string[]; // ISO date strings (YYYY-MM-DD) the technician has open slots
 }
 
 export interface ServiceCategory {
