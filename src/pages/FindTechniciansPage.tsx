@@ -79,7 +79,7 @@ export const FindTechniciansPage: React.FC = () => {
   const getMatchScore = (t: Technician): number => {
     const distanceScore = Math.max(0, 1 - t.distanceKm / 15); // closer is better
     const ratingScore = t.rating / 5;
-    const availableToday = t.availableDates.includes(todayISO()) ? 1 : 0;
+    const availableToday = t.availableDates?.includes(todayISO()) ? 1 : 0;
     return distanceScore * 35 + ratingScore * 45 + availableToday * 20;
   };
 
@@ -133,10 +133,10 @@ export const FindTechniciansPage: React.FC = () => {
         }
 
         // Availability schedule
-        if (availabilityMode === 'today' && !t.availableDates.includes(todayISO())) {
+        if (availabilityMode === 'today' && !t.availableDates?.includes(todayISO())) {
           return false;
         }
-        if (availabilityMode === 'date' && !t.availableDates.includes(availabilityDate)) {
+        if (availabilityMode === 'date' && !t.availableDates?.includes(availabilityDate)) {
           return false;
         }
 

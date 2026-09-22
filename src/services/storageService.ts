@@ -102,7 +102,10 @@ export const storageService = {
 
   // Technicians
   getTechnicians(): Technician[] {
-    return getItem<Technician[]>(STORAGE_KEYS.TECHNICIANS, INITIAL_TECHNICIANS);
+    const list = getItem<Technician[]>(STORAGE_KEYS.TECHNICIANS, INITIAL_TECHNICIANS);
+    // Defensive normalization: data cached in localStorage before a schema change
+    // (e.g. availableDates) may be missing newer fields and would otherwise crash consumers.
+    return list.map(t => ({ ...t, availableDates: t.availableDates ?? [] }));
   },
   getTechnicianById(id: string): Technician | undefined {
     return this.getTechnicians().find(t => t.id === id);
