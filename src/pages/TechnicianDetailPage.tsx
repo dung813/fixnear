@@ -41,7 +41,7 @@ export const TechnicianDetailPage: React.FC = () => {
       const found = storageService.getTechnicianById(id);
       if (found) {
         setTechnician(found);
-        setReviews(storageService.getReviewsByTechnicianId(id));
+        setReviews(storageService.getReviewsByTechnicianId(id).filter(r => !r.isHidden));
       }
     }
   }, [id]);

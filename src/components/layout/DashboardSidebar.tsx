@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Settings,
   SlidersHorizontal,
-  History
+  History,
+  AlertTriangle
 } from 'lucide-react';
 
 export const DashboardSidebar: React.FC = () => {
@@ -51,10 +52,11 @@ export const DashboardSidebar: React.FC = () => {
   const adminLinks = [
     { label: 'Tổng quan Platform', path: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Quản lý Người dùng', path: '/admin/users', icon: Users },
-    { label: 'Quản lý Thợ sửa chữa', path: '/admin/technicians', icon: ShieldCheck },
-    { label: 'Yêu cầu & Đơn hàng', path: '/admin/requests', icon: ClipboardList },
-    { label: 'Doanh thu & Báo cáo', path: '/admin/revenue', icon: TrendingUp },
+    { label: 'Quản lý Thợ & KYC', path: '/admin/technicians', icon: ShieldCheck },
     { label: 'Danh mục dịch vụ', path: '/admin/categories', icon: Layers },
+    { label: 'Yêu cầu & Đơn hàng', path: '/admin/requests', icon: ClipboardList },
+    { label: 'Tài chính & Đối soát', path: '/admin/revenue', icon: TrendingUp },
+    { label: 'Khiếu nại & Bảo hành', path: '/admin/disputes', icon: AlertTriangle },
   ];
 
   const currentLinks = role === 'admin' ? adminLinks : role === 'technician' ? technicianLinks : customerLinks;

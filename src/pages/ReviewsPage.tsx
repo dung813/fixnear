@@ -11,7 +11,7 @@ export const ReviewsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    setReviews(storageService.getReviews());
+    setReviews(storageService.getReviews().filter(r => !r.isHidden));
   }, []);
 
   const filtered = reviews.filter((r: Review) => {

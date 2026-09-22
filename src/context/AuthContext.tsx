@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (email: string, password?: string): boolean => {
     const users = storageService.getUsers();
     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (found && (!found.password || found.password === password)) {
+    if (found && !found.isLocked && (!found.password || found.password === password)) {
       setUser(found);
       storageService.setCurrentUser(found);
       return true;

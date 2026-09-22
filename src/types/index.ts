@@ -12,6 +12,7 @@ export interface User {
   district: string;
   city: 'Hà Nội' | 'TP. Hồ Chí Minh';
   createdAt: string;
+  isLocked?: boolean;
 }
 
 export interface Address {
@@ -84,6 +85,9 @@ export interface ServiceCategory {
   startingPrice: number;
   popularServices: string[];
   bannerImage: string;
+  isActive?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 export type RequestStatus = 'open' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
@@ -221,6 +225,7 @@ export interface WarrantyClaim {
   photos: string[];
   preferredDate: string;
   status: 'pending' | 'scheduled' | 'resolved';
+  adminNotes?: string;
   createdAt: string;
 }
 
@@ -245,6 +250,7 @@ export interface Review {
   photos?: string[];
   createdAt: string;
   technicianReply?: string;
+  isHidden?: boolean;
 }
 
 export interface ChatMessage {

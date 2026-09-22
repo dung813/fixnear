@@ -105,6 +105,23 @@ export const storageService = {
   getCategories(): ServiceCategory[] {
     return getItem<ServiceCategory[]>(STORAGE_KEYS.CATEGORIES, INITIAL_CATEGORIES);
   },
+  addCategory(category: ServiceCategory): void {
+    const list = this.getCategories();
+    list.push(category);
+    setItem(STORAGE_KEYS.CATEGORIES, list);
+  },
+  updateCategory(id: string, updates: Partial<ServiceCategory>): void {
+    const list = this.getCategories();
+    const idx = list.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...updates };
+      setItem(STORAGE_KEYS.CATEGORIES, list);
+    }
+  },
+  deleteCategory(id: string): void {
+    const list = this.getCategories().filter(c => c.id !== id);
+    setItem(STORAGE_KEYS.CATEGORIES, list);
+  },
 
   // Technicians
   getTechnicians(): Technician[] {
@@ -266,6 +283,14 @@ export const storageService = {
     list.unshift(claim);
     setItem(STORAGE_KEYS.WARRANTY_CLAIMS, list);
   },
+  updateWarrantyClaim(id: string, updates: Partial<WarrantyClaim>): void {
+    const list = getItem<WarrantyClaim[]>(STORAGE_KEYS.WARRANTY_CLAIMS, []);
+    const idx = list.findIndex(w => w.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...updates };
+      setItem(STORAGE_KEYS.WARRANTY_CLAIMS, list);
+    }
+  },
 
   // Reviews
   getReviews(): Review[] {
@@ -287,6 +312,14 @@ export const storageService = {
     });
 
     this.updateBookingStatus(review.bookingId, 'reviewed');
+  },
+  updateReview(id: string, updates: Partial<Review>): void {
+    const list = this.getReviews();
+    const idx = list.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...updates };
+      setItem(STORAGE_KEYS.REVIEWS, list);
+    }
   },
 
   // Disputes & Support Resolution
@@ -330,6 +363,19 @@ export const storageService = {
     const list = this.getUsers();
     list.push(user);
     setItem(STORAGE_KEYS.USERS, list);
+  },
+  updateUser(id: string, updates: Partial<User>): void {
+    const list = this.getUsers();
+    const idx = list.findIndex(u => u.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...updates };
+      setItem(STORAGE_KEYS.USERS, list);
+      // Keep the active session in sync if the admin edits the logged-in user.
+      const current = this.getCurrentUser();
+      if (current && current.id === id) {
+        this.setCurrentUser(list[idx]);
+      }
+    }
   },
 
   // Saved Addresses
