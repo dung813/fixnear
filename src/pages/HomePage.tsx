@@ -101,14 +101,16 @@ export const HomePage: React.FC = () => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            FixNear –{' '}
+            FixNear – Sửa chữa tại nhà
+            <br />
             <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-blue-200 bg-clip-text text-transparent">
-              Sửa chữa tại nhà nhanh chóng
+              Nhanh chóng &amp; Uy tín
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Kết nối thợ giỏi gần bạn chỉ trong 30 giây. Báo giá minh bạch, thanh toán an toàn và bảo hành chu đáo.
+            Kết nối thợ giỏi gần bạn chỉ trong 30 giây. Báo giá minh bạch, thanh toán
+            an&nbsp;toàn và bảo hành chu đáo.
           </p>
 
           {/* Quick CTA Buttons */}
@@ -118,11 +120,11 @@ export const HomePage: React.FC = () => {
                 Tìm thợ ngay
               </Button>
             </Link>
-            <Link to="/post-request">
+            <a href="#services">
               <Button variant="secondary" size="lg" className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm sm:text-base">
-                Đăng yêu cầu
+                Bảng giá tham khảo
               </Button>
-            </Link>
+            </a>
           </div>
 
           {/* Large Hero Interactive Search Bar */}
@@ -218,7 +220,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 2. SERVICE CATEGORIES GRID */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="services" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
             <div className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-1">

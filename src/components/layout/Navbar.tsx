@@ -117,14 +117,24 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => requireAuth(() => setCreateRequestOpen(true))}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm hover:shadow-brand transition-all active:scale-[0.98]"
-            >
-              <PlusCircle className="w-4 h-4" />
-              Đăng yêu cầu sửa
-            </button>
+            {role === 'admin' && isAuthenticated ? (
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold shadow-sm transition-all active:scale-[0.98]"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Vào trang Quản trị
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => requireAuth(() => setCreateRequestOpen(true))}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm hover:shadow-brand transition-all active:scale-[0.98]"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Đăng yêu cầu sửa
+              </button>
+            )}
 
             {isAuthenticated && user ? (
               <div className="relative">
@@ -233,13 +243,22 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
-            <button
-              type="button"
-              onClick={() => requireAuth(() => setCreateRequestOpen(true))}
-              className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold"
-            >
-              Đăng yêu cầu
-            </button>
+            {role === 'admin' && isAuthenticated ? (
+              <Link
+                to="/admin"
+                className="px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold"
+              >
+                Trang Quản trị
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => requireAuth(() => setCreateRequestOpen(true))}
+                className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold"
+              >
+                Đăng yêu cầu
+              </button>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition"
