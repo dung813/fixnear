@@ -46,7 +46,7 @@ export const FindTechniciansPage: React.FC = () => {
   // Filter States initialized from URL params, falling back to the city
   // currently selected in the Header so the two stay in sync by default.
   const [query, setQuery] = useState(searchParams.get('q') || '');
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('cat') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('cat') || searchParams.get('category') || '');
   const [selectedCity, setSelectedCity] = useState(searchParams.get('city') || headerCity);
   const [selectedDistrict, setSelectedDistrict] = useState(searchParams.get('district') || 'Tất cả');
 
@@ -85,7 +85,9 @@ export const FindTechniciansPage: React.FC = () => {
   // Update query state if URL params change
   useEffect(() => {
     const q = searchParams.get('q');
-    const cat = searchParams.get('cat');
+    // Accept both ?cat= (legacy, still used internally) and ?category=
+    // (used by the Services page) so links from either source filter correctly.
+    const cat = searchParams.get('cat') ?? searchParams.get('category');
     const city = searchParams.get('city');
     const dist = searchParams.get('district');
     if (q !== null) setQuery(q);
