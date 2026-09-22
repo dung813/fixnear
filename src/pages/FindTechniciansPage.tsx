@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Technician, ServiceCategory } from '../types';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { TechCard } from '../components/technicians/TechCard';
 import { BookingModal } from '../components/technicians/BookingModal';
 import { CompareModal } from '../components/technicians/CompareModal';
@@ -22,6 +23,7 @@ const todayISO = () => new Date().toISOString().split('T')[0];
 export const FindTechniciansPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const requireAuth = useRequireAuth();
 
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
@@ -587,11 +589,11 @@ export const FindTechniciansPage: React.FC = () => {
         onClose={() => setCompareModalOpen(false)}
         technicians={compareList}
         onRemoveTech={id => setCompareList(prev => prev.filter(t => t.id !== id))}
-        onBookTech={t => setSelectedTechForBooking(t)}
-        onChatTech={t => {
+        onBookTech={t => requireAuth(() => setSelectedTechForBooking(t))}
+        onChatTech={t => requireAuth(() => {
           const conv = storageService.getOrCreateConversation('user-cust-1', 'Hoàng Thùy Linh', '', t);
           navigate(`/chat?conv=${conv.id}`);
-        }}
+        })}
       />
 
     </div>

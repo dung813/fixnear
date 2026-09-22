@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Technician } from '../../types';
+import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { Avatar } from '../common/Avatar';
 import { RatingStars } from '../common/RatingStars';
 import { Badge } from '../common/Badge';
@@ -31,6 +32,7 @@ export const TechCard: React.FC<TechCardProps> = ({
   isComparing = false,
 }) => {
   const isAvailableToday = technician.availableDates?.includes(new Date().toISOString().split('T')[0]) ?? false;
+  const requireAuth = useRequireAuth();
 
   return (
     <div className={`bg-white rounded-2xl border ${isComparing ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-200/80'} p-5 shadow-card hover:shadow-card-hover transition-all duration-200 flex flex-col justify-between group relative overflow-hidden`}>
@@ -163,7 +165,7 @@ export const TechCard: React.FC<TechCardProps> = ({
 
           <Button
             size="sm"
-            onClick={() => onQuickBook && onQuickBook(technician)}
+            onClick={() => requireAuth(() => onQuickBook && onQuickBook(technician))}
             className="w-full text-xs font-bold"
             rightIcon={<CalendarCheck className="w-3.5 h-3.5" />}
           >

@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   role: UserRole;
   isAuthenticated: boolean;
-  login: (email: string, role?: UserRole) => boolean;
+  login: (email: string, password?: string) => boolean;
   loginAsRole: (role: UserRole) => void;
   register: (user: Omit<User, 'id' | 'createdAt'>) => void;
   logout: () => void;
@@ -17,6 +17,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Starts as Guest/Unauthenticated (user = null) on every fresh browser
+  // session; only an explicit login/register call (persisted afterwards)
+  // restores a session on later reloads.
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -27,14 +30,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = (email: string, role?: UserRole): boolean => {
+  const login = (email: string, password?: string): boolean => {
     const users = storageService.getUsers();
-    let found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!found && role) {
-      // Find matching demo user by role
-      found = DEMO_USERS.find(u => u.role === role);
-    }
-    if (found) {
+    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (found && (!found.password || found.password === password)) {
       setUser(found);
       storageService.setCurrentUser(found);
       return true;

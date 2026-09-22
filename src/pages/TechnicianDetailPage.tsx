@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Technician, Review, ServiceItem } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { Avatar } from '../components/common/Avatar';
 import { RatingStars } from '../components/common/RatingStars';
 import { Badge } from '../components/common/Badge';
@@ -29,6 +30,7 @@ export const TechnicianDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const requireAuth = useRequireAuth();
 
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -155,7 +157,7 @@ export const TechnicianDetailPage: React.FC = () => {
           <div className="space-y-2">
             <Button
               className="w-full font-bold shadow-md shadow-blue-600/20"
-              onClick={() => setBookingModalOpen(true)}
+              onClick={() => requireAuth(() => setBookingModalOpen(true))}
             >
               Đặt lịch hẹn ngay
             </Button>
@@ -163,7 +165,7 @@ export const TechnicianDetailPage: React.FC = () => {
               variant="outline"
               className="w-full font-semibold"
               leftIcon={<MessageSquare className="w-4 h-4 text-blue-600" />}
-              onClick={handleStartChat}
+              onClick={() => requireAuth(handleStartChat)}
             >
               Chat tư vấn
             </Button>
@@ -261,7 +263,7 @@ export const TechnicianDetailPage: React.FC = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setBookingModalOpen(true)}
+                      onClick={() => requireAuth(() => setBookingModalOpen(true))}
                       className="text-xs"
                     >
                       Chọn

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import { storageService } from '../services/storageService';
 import { ServiceRequest, Booking, Review, Technician } from '../types';
 import { DashboardSidebar } from '../components/layout/DashboardSidebar';
@@ -34,6 +35,7 @@ import {
 export const CustomerDashboardPage: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const requireAuth = useRequireAuth();
 
   const [activeTab, setActiveTab] = useState<'requests' | 'bookings' | 'history' | 'profile'>('requests');
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
@@ -117,7 +119,7 @@ export const CustomerDashboardPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Button
             size="md"
-            onClick={() => setCreateRequestOpen(true)}
+            onClick={() => requireAuth(() => setCreateRequestOpen(true))}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/30 text-xs sm:text-sm"
           >
             <PlusCircle className="w-4 h-4 mr-1.5" />
@@ -216,7 +218,7 @@ export const CustomerDashboardPage: React.FC = () => {
                 </h3>
                 <button
                   type="button"
-                  onClick={() => setCreateRequestOpen(true)}
+                  onClick={() => requireAuth(() => setCreateRequestOpen(true))}
                   className="text-xs font-bold text-blue-600 hover:text-blue-700"
                 >
                   + Đăng việc mới
@@ -286,7 +288,7 @@ export const CustomerDashboardPage: React.FC = () => {
               ) : (
                 <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 text-slate-500 space-y-3">
                   <p>Bạn chưa đăng yêu cầu sửa chữa nào.</p>
-                  <Button size="sm" onClick={() => setCreateRequestOpen(true)}>
+                  <Button size="sm" onClick={() => requireAuth(() => setCreateRequestOpen(true))}>
                     Đăng yêu cầu đầu tiên ngay
                   </Button>
                 </div>
@@ -570,10 +572,10 @@ export const CustomerDashboardPage: React.FC = () => {
         request={matchingRequest}
         allTechnicians={allTechs}
         onSelectTech={t => navigate(`/technicians/${t.id}`)}
-        onChatTech={t => {
+        onChatTech={t => requireAuth(() => {
           const conv = storageService.getOrCreateConversation(user?.id || 'user-cust-1', user?.name || 'Người dùng mới', '', t);
           navigate(`/chat?conv=${conv.id}`);
-        }}
+        })}
       />
 
     </div>

@@ -22,7 +22,7 @@ export const RegisterPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !phone.trim()) {
+    if (!name.trim() || !email.trim() || !phone.trim() || !password.trim()) {
       error('Vui lòng điền đầy đủ các thông tin bắt buộc');
       return;
     }
@@ -34,6 +34,7 @@ export const RegisterPage: React.FC = () => {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
+        password: password.trim(),
         role: 'customer',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80',
         city,

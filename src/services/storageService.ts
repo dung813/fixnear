@@ -62,9 +62,8 @@ export const initializeStorage = () => {
   if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEMO_USERS));
   }
-  if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(DEMO_USERS[0]));
-  }
+  // Intentionally no default for CURRENT_USER: the app starts logged out
+  // (Guest/Unauthenticated) until the visitor explicitly logs in or registers.
   if (!localStorage.getItem(STORAGE_KEYS.CONVERSATIONS)) {
     localStorage.setItem(STORAGE_KEYS.CONVERSATIONS, JSON.stringify(INITIAL_CONVERSATIONS));
   }
@@ -313,7 +312,7 @@ export const storageService = {
     return getItem<User[]>(STORAGE_KEYS.USERS, DEMO_USERS);
   },
   getCurrentUser(): User | null {
-    return getItem<User | null>(STORAGE_KEYS.CURRENT_USER, DEMO_USERS[0]);
+    return getItem<User | null>(STORAGE_KEYS.CURRENT_USER, null);
   },
   setCurrentUser(user: User | null): void {
     setItem(STORAGE_KEYS.CURRENT_USER, user);

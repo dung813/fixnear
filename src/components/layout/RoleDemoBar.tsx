@@ -31,7 +31,11 @@ export const RoleDemoBar: React.FC = () => {
             Bảng điều khiển Demo (Dành cho Giảng viên & Hội đồng):
           </span>
           <span className="hidden sm:inline text-slate-400">
-            Đang đăng nhập: <strong className="text-white">{user?.name}</strong> ({role})
+            {user ? (
+              <>Đang đăng nhập: <strong className="text-white">{user.name}</strong> ({role})</>
+            ) : (
+              <>Trạng thái: <strong className="text-amber-400">Chưa đăng nhập (Guest)</strong> — bấm nút vai trò để đăng nhập thử</>
+            )}
           </span>
         </div>
 
@@ -39,7 +43,7 @@ export const RoleDemoBar: React.FC = () => {
           <button
             onClick={() => handleSwitchRole('customer')}
             className={`px-2.5 py-1 rounded-md font-medium flex items-center gap-1 transition ${
-              role === 'customer'
+              !!user && role === 'customer'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
@@ -51,7 +55,7 @@ export const RoleDemoBar: React.FC = () => {
           <button
             onClick={() => handleSwitchRole('technician')}
             className={`px-2.5 py-1 rounded-md font-medium flex items-center gap-1 transition ${
-              role === 'technician'
+              !!user && role === 'technician'
                 ? 'bg-amber-600 text-white shadow-sm'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
@@ -63,7 +67,7 @@ export const RoleDemoBar: React.FC = () => {
           <button
             onClick={() => handleSwitchRole('admin')}
             className={`px-2.5 py-1 rounded-md font-medium flex items-center gap-1 transition ${
-              role === 'admin'
+              !!user && role === 'admin'
                 ? 'bg-purple-600 text-white shadow-sm'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}

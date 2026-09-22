@@ -13,7 +13,7 @@ export const LoginPage: React.FC = () => {
   const { success, error } = useNotification();
 
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('123456');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -21,13 +21,13 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     setTimeout(() => {
-      const ok = login(email);
+      const ok = login(email, password);
       setIsLoading(false);
       if (ok) {
         success('Đăng nhập thành công!');
         navigate('/');
       } else {
-        error('Email không tồn tại trong hệ thống demo. Vui lòng chọn tài khoản mẫu bên dưới.');
+        error('Email hoặc mật khẩu không đúng. Vui lòng thử lại hoặc chọn tài khoản mẫu bên dưới.');
       }
     }, 500);
   };
@@ -75,7 +75,7 @@ export const LoginPage: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-blue-600 group-hover:text-white" />
-                <span>Khách hàng (Người dùng mới)</span>
+                <span>Đăng nhập thử với tài khoản Khách hàng</span>
               </div>
               <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
             </button>

@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  password?: string; // demo-only mock credential, never used for real security
   role: UserRole;
   avatar: string;
   address?: string;

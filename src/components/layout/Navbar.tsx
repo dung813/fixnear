@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { storageService } from '../../services/storageService';
+import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { Avatar } from '../common/Avatar';
 import { CreateRequestModal } from '../requests/CreateRequestModal';
 import { 
@@ -29,6 +30,7 @@ export const Navbar: React.FC = () => {
   const [selectedCity, setSelectedCity] = useState<'Hà Nội' | 'TP. Hồ Chí Minh'>('Hà Nội');
   const navigate = useNavigate();
   const location = useLocation();
+  const requireAuth = useRequireAuth();
 
   const handleLogout = () => {
     logout();
@@ -117,7 +119,7 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setCreateRequestOpen(true)}
+              onClick={() => requireAuth(() => setCreateRequestOpen(true))}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm hover:shadow-brand transition-all active:scale-[0.98]"
             >
               <PlusCircle className="w-4 h-4" />
@@ -215,15 +217,15 @@ export const Navbar: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition"
                 >
                   Đăng nhập
                 </Link>
                 <Link
-                  to="/technician/register"
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 border border-slate-300 hover:border-slate-400 bg-white transition"
+                  to="/register"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-brand transition"
                 >
-                  Trở thành thợ
+                  Đăng ký
                 </Link>
               </div>
             )}
@@ -233,7 +235,7 @@ export const Navbar: React.FC = () => {
           <div className="flex md:hidden items-center gap-2">
             <button
               type="button"
-              onClick={() => setCreateRequestOpen(true)}
+              onClick={() => requireAuth(() => setCreateRequestOpen(true))}
               className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold"
             >
               Đăng yêu cầu
@@ -325,11 +327,11 @@ export const Navbar: React.FC = () => {
                   Đăng nhập
                 </Link>
                 <Link
-                  to="/technician/register"
+                  to="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold"
+                  className="w-full text-center py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold"
                 >
-                  Làm đối tác
+                  Đăng ký
                 </Link>
               </div>
             )}
