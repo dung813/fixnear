@@ -110,8 +110,9 @@ export const HomePage: React.FC = () => {
           </h1>
 
           <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Kết nối thợ giỏi gần bạn chỉ trong 30 giây. Báo giá minh bạch, thanh toán
-            an&nbsp;toàn và bảo hành chu đáo.
+            Kết nối thợ giỏi gần bạn chỉ trong 30 giây.
+            <br />
+            Báo giá minh bạch, thanh toán an&nbsp;toàn và bảo hành chu đáo.
           </p>
 
           {/* Quick CTA Buttons */}
@@ -140,7 +141,7 @@ export const HomePage: React.FC = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                  placeholder="Tôi cần sửa gì? (ví dụ: Điều hòa không mát...)"
+                  placeholder="Nhập vấn đề cần sửa (ví dụ: Điều hòa, Máy giặt, Khóa...)"
                   className="w-full bg-transparent text-sm placeholder-slate-400 focus:outline-none font-medium"
                 />
               </div>

@@ -3,24 +3,26 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCity } from '../../context/CityContext';
 import { storageService } from '../../services/storageService';
-import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { Avatar } from '../common/Avatar';
 import { CreateRequestModal } from '../requests/CreateRequestModal';
-import { 
-  Wrench, 
-  Search, 
-  PlusCircle, 
-  Menu, 
-  X, 
-  MessageSquare, 
-  CalendarCheck, 
-  LayoutDashboard, 
-  LogOut, 
-  MapPin, 
-  ChevronDown, 
-  ShieldCheck, 
+import { Modal } from '../common/Modal';
+import { Button } from '../common/Button';
+import {
+  Wrench,
+  Search,
+  PlusCircle,
+  Menu,
+  X,
+  MessageSquare,
+  CalendarCheck,
+  LayoutDashboard,
+  LogOut,
+  MapPin,
+  ChevronDown,
+  ShieldCheck,
   HelpCircle,
-  Info
+  Info,
+  UserCircle
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -28,15 +30,23 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [createRequestOpen, setCreateRequestOpen] = useState(false);
+  const [guestBlockOpen, setGuestBlockOpen] = useState(false);
   const { city: selectedCity, setCity: setSelectedCity } = useCity();
   const navigate = useNavigate();
   const location = useLocation();
-  const requireAuth = useRequireAuth();
 
   const handleLogout = () => {
     logout();
     setUserDropdownOpen(false);
     navigate('/');
+  };
+
+  const handlePostRequestClick = () => {
+    if (!isAuthenticated) {
+      setGuestBlockOpen(true);
+      return;
+    }
+    setCreateRequestOpen(true);
   };
 
   const getDashboardLink = () => {
@@ -151,7 +161,7 @@ export const Navbar: React.FC = () => {
             ) : (
               <button
                 type="button"
-                onClick={() => requireAuth(() => setCreateRequestOpen(true))}
+                onClick={handlePostRequestClick}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm hover:shadow-brand transition-all active:scale-[0.98]"
               >
                 <PlusCircle className="w-4 h-4" />
@@ -284,7 +294,7 @@ export const Navbar: React.FC = () => {
             ) : (
               <button
                 type="button"
-                onClick={() => requireAuth(() => setCreateRequestOpen(true))}
+                onClick={handlePostRequestClick}
                 className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold"
               >
                 Đăng yêu cầu
@@ -390,6 +400,46 @@ export const Navbar: React.FC = () => {
       )}
 
       <CreateRequestModal isOpen={createRequestOpen} onClose={() => setCreateRequestOpen(false)} />
+
+      {/* Guest gate: block posting a repair request until logged in as a Customer */}
+      <Modal
+        isOpen={guestBlockOpen}
+        onClose={() => setGuestBlockOpen(false)}
+        maxWidth="sm"
+      >
+        <div className="text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <UserCircle className="w-7 h-7" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900">Yêu cầu đăng nhập</h3>
+            <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
+              Vui lòng đăng nhập tài khoản Khách hàng để đăng yêu cầu sửa chữa.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setGuestBlockOpen(false);
+                navigate('/register');
+              }}
+            >
+              Đăng ký
+            </Button>
+            <Button
+              className="flex-1 font-bold"
+              onClick={() => {
+                setGuestBlockOpen(false);
+                navigate('/login');
+              }}
+            >
+              Đăng nhập
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </header>
   );
 };
