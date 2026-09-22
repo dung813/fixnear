@@ -185,6 +185,7 @@ export const storageService = {
         status,
         ...(extra?.finalPrice ? { finalPrice: extra.finalPrice } : {}),
         ...(extra?.paymentStatus ? { paymentStatus: extra.paymentStatus } : {}),
+        ...(status === 'en_route' && !current.enRouteAt ? { enRouteAt: now } : {}),
         ...(status === 'surveying' && !current.surveyAt ? { surveyAt: now } : {}),
         ...(status === 'in_progress' && !current.inProgressAt ? { inProgressAt: now } : {}),
         ...(status === 'completed' && !current.completedAt ? { completedAt: now, paymentStatus: current.paymentMethod === 'escrow' ? 'released' : 'cash_on_delivery' } : {}),
@@ -194,7 +195,13 @@ export const storageService = {
   },
 
   // Quotation approval (phát sinh vật tư / chi phí trong quá trình sửa chữa)
-  submitQuotation(bookingId: string, quotation: Omit<Quotation, 'status' | 'createdAt'>): void {
+  // Also doubles as the technician's handover step: completion photos + a
+  // revised warranty offer can be attached at the same time the quote is sent.
+  submitQuotation(
+    bookingId: string,
+    quotation: Omit<Quotation, 'status' | 'createdAt'>,
+    extra?: { completionPhotos?: string[]; warrantyMonths?: number }
+  ): void {
     const list = this.getBookings();
     const idx = list.findIndex(b => b.id === bookingId);
     if (idx !== -1) {
@@ -203,6 +210,8 @@ export const storageService = {
         status: 'quote_pending',
         quotation: { ...quotation, status: 'pending', createdAt: new Date().toISOString() },
         quotedAt: new Date().toISOString(),
+        ...(extra?.completionPhotos ? { completionPhotos: extra.completionPhotos } : {}),
+        ...(extra?.warrantyMonths ? { warrantyMonths: extra.warrantyMonths } : {}),
       };
       setItem(STORAGE_KEYS.BOOKINGS, list);
     }

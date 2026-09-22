@@ -40,7 +40,8 @@ const getStepIndex = (status: Booking['status']): number => {
   switch (status) {
     case 'pending': return 0;
     case 'accepted': return 1;
-    case 'surveying': return 2;
+    case 'en_route': return 2;
+    case 'surveying':
     case 'in_progress':
     case 'quote_pending':
     case 'payment_pending': return 3;
@@ -54,8 +55,9 @@ const getStepIndex = (status: Booking['status']): number => {
 const STATUS_LABELS: Record<Booking['status'], string> = {
   pending: 'Đã đặt lịch',
   accepted: 'Thợ đã tiếp nhận',
-  surveying: 'Đang di chuyển',
-  in_progress: 'Đang kiểm tra & sửa chữa',
+  en_route: 'Đang di chuyển',
+  surveying: 'Đã đến nơi - Đang kiểm tra',
+  in_progress: 'Đang sửa chữa',
   quote_pending: 'Chờ duyệt báo giá',
   payment_pending: 'Chờ thanh toán',
   completed: 'Hoàn thành & Nghiệm thu',
@@ -211,10 +213,16 @@ export const OrderDetailPage: React.FC = () => {
             })}
           </div>
 
-          {booking.status === 'surveying' && (
+          {booking.status === 'en_route' && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-2 text-xs text-blue-800 font-semibold">
               <Truck className="w-4 h-4" />
               Thợ dự kiến có mặt sau khoảng 15-20 phút nữa.
+            </div>
+          )}
+          {booking.status === 'surveying' && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-2 text-xs text-blue-800 font-semibold">
+              <ClipboardCheck className="w-4 h-4" />
+              Thợ đã có mặt và đang kiểm tra tình trạng thực tế.
             </div>
           )}
 

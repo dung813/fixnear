@@ -65,6 +65,13 @@ export interface Technician {
   responseTimeMinutes: number;
   joinedDate: string;
   availableDates: string[]; // ISO date strings (YYYY-MM-DD) the technician has open slots
+  weeklySlots?: string[]; // recurring weekly availability, e.g. 'T2-sang', 'T3-chieu'
+  kycDocuments?: {
+    idFrontUrl?: string;
+    idBackUrl?: string;
+    certificateUrl?: string;
+  };
+  kycStatus?: 'unverified' | 'pending' | 'verified';
 }
 
 export interface ServiceCategory {
@@ -126,8 +133,9 @@ export interface ServiceRequest {
 export type BookingStatus =
   | 'pending'         // Chờ xác nhận
   | 'accepted'        // Đã xác nhận
-  | 'surveying'       // Đang khảo sát tại nhà
-  | 'in_progress'     // Đang thi công
+  | 'en_route'        // Thợ đang di chuyển đến nơi
+  | 'surveying'       // Đã đến nơi - Đang kiểm tra tại nhà
+  | 'in_progress'     // Đang sửa chữa
   | 'quote_pending'   // Chờ khách duyệt báo giá phát sinh
   | 'payment_pending' // Đã duyệt báo giá, chờ thanh toán
   | 'completed'       // Đã hoàn thành (chờ đánh giá/nghiệm thu)
@@ -193,7 +201,9 @@ export interface Booking {
   quotation?: Quotation;
   finalPaymentMethod?: FinalPaymentMethod;
   invoiceId?: string;
+  completionPhotos?: string[];
   createdAt: string;
+  enRouteAt?: string;
   surveyAt?: string;
   inProgressAt?: string;
   quotedAt?: string;

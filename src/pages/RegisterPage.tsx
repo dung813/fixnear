@@ -4,9 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import { Wrench, Home, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Wrench, Home, ArrowLeft, ArrowRight, CheckCircle2, Camera } from 'lucide-react';
 
 type RegisterRole = 'customer' | 'technician';
+
+const SAMPLE_AVATARS = [
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80',
+  'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&q=80',
+];
 
 const SPECIALTIES = [
   { slug: 'dien', label: 'Điện dân dụng' },
@@ -43,6 +50,11 @@ export const RegisterPage: React.FC = () => {
   // Technician-only fields
   const [specialty, setSpecialty] = useState(SPECIALTIES[0].slug);
   const [experienceYears, setExperienceYears] = useState('3');
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
+
+  const handlePickPortrait = () => {
+    setPortraitUrl(SAMPLE_AVATARS[Math.floor(Math.random() * SAMPLE_AVATARS.length)]);
+  };
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -81,13 +93,13 @@ export const RegisterPage: React.FC = () => {
             phone: phone.trim(),
             password: password.trim(),
             role: 'technician',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
+            avatar: portraitUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
             city,
             district,
           },
           {
             name: name.trim(),
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
+            avatar: portraitUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
             title: `Thợ ${specialtyLabel}`,
             rating: 5.0,
             reviewCount: 0,
@@ -300,6 +312,26 @@ export const RegisterPage: React.FC = () => {
               />
             ) : (
               <>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Ảnh chân dung</label>
+                  <div className="flex items-center gap-3">
+                    {portraitUrl ? (
+                      <img src={portraitUrl} alt="Ảnh chân dung" className="w-14 h-14 rounded-full object-cover border border-slate-200" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-slate-400">
+                        <Camera className="w-5 h-5" />
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handlePickPortrait}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition"
+                    >
+                      <Camera className="w-3.5 h-3.5" /> {portraitUrl ? 'Đổi ảnh' : 'Tải ảnh lên'}
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Chuyên môn chính *</label>
                   <select

@@ -86,6 +86,7 @@ export const CustomerDashboardPage: React.FC = () => {
     switch (status) {
       case 'pending': return 1;
       case 'accepted': return 2;
+      case 'en_route':
       case 'surveying': return 3;
       case 'in_progress':
       case 'quote_pending':
@@ -338,7 +339,7 @@ export const CustomerDashboardPage: React.FC = () => {
                               variant={
                                 bk.status === 'cancelled'
                                   ? 'danger'
-                                  : bk.status === 'in_progress' || bk.status === 'surveying' || bk.status === 'accepted'
+                                  : bk.status === 'in_progress' || bk.status === 'en_route' || bk.status === 'surveying' || bk.status === 'accepted'
                                   ? 'success'
                                   : bk.status === 'quote_pending'
                                   ? 'warning'
@@ -357,6 +358,8 @@ export const CustomerDashboardPage: React.FC = () => {
                                 ? '1. Chờ xác nhận'
                                 : bk.status === 'accepted'
                                 ? '2. Đã xác nhận'
+                                : bk.status === 'en_route'
+                                ? '3. Thợ đang di chuyển'
                                 : bk.status === 'surveying'
                                 ? '3. Đang khảo sát'
                                 : bk.status === 'in_progress'
