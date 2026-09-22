@@ -75,7 +75,7 @@ export const LoginPage: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-blue-600 group-hover:text-white" />
-                <span>Khách hàng (Hoàng Thùy Linh)</span>
+                <span>Khách hàng (Người dùng mới)</span>
               </div>
               <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" />
             </button>

@@ -65,6 +65,8 @@ export const CustomerDashboardPage: React.FC = () => {
     return () => window.removeEventListener('fixnear_storage_update', loadData);
   }, [user]);
 
+  const isNewAccount = !!user && (Date.now() - new Date(user.createdAt).getTime()) < 1000 * 60 * 60 * 24 * 7;
+
   const activeRequestsCount = requests.filter((r: ServiceRequest) => r.status === 'open' || r.status === 'assigned').length;
   const pendingBookingsCount = bookings.filter((b: Booking) => b.status === 'pending' || b.status === 'accepted' || b.status === 'surveying' || b.status === 'in_progress').length;
   const completedBookingsCount = bookings.filter((b: Booking) => b.status === 'completed' || b.status === 'reviewed').length;
@@ -95,11 +97,11 @@ export const CustomerDashboardPage: React.FC = () => {
         <div className="flex items-center gap-4">
           <Avatar src={user?.avatar} name={user?.name || 'Khách hàng'} size="xl" isOnline={true} />
           <div>
-            <span className="text-xs font-semibold text-blue-300 uppercase tracking-wider">
-              Khách hàng thân thiết
+            <span className={`text-xs font-semibold uppercase tracking-wider ${isNewAccount ? 'text-emerald-300' : 'text-blue-300'}`}>
+              {isNewAccount ? 'Tài khoản vừa được tạo' : 'Khách hàng thân thiết'}
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">
-              Xin chào, {user?.name || 'Hoàng Thùy Linh'}
+              Xin chào, {user?.name || 'Người dùng mới'}
             </h1>
             <p className="text-xs text-slate-300 mt-1">
               Khu vực hoạt động: <strong className="text-white">{user?.district}, {user?.city}</strong>
@@ -503,7 +505,7 @@ export const CustomerDashboardPage: React.FC = () => {
         allTechnicians={allTechs}
         onSelectTech={t => navigate(`/technicians/${t.id}`)}
         onChatTech={t => {
-          const conv = storageService.getOrCreateConversation('user-cust-1', 'Hoàng Thùy Linh', '', t);
+          const conv = storageService.getOrCreateConversation(user?.id || 'user-cust-1', user?.name || 'Người dùng mới', '', t);
           navigate(`/chat?conv=${conv.id}`);
         }}
       />

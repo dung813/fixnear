@@ -513,15 +513,15 @@ export const INITIAL_DISPUTES: DisputeTicket[] = [
 export const DEMO_USERS: User[] = [
   {
     id: 'user-cust-1',
-    name: 'Hoàng Thùy Linh',
+    name: 'Người dùng mới',
     email: 'khachhang@fixnear.vn',
     phone: '0912 333 444',
     role: 'customer',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+    avatar: 'https://ui-avatars.com/api/?name=Nguoi+dung+moi&background=2563eb&color=fff&bold=true',
     address: 'Căn 1502 Discovery Complex, 302 Cầu Giấy',
     district: 'Cầu Giấy',
     city: 'Hà Nội',
-    createdAt: '2024-01-15T00:00:00Z',
+    createdAt: new Date().toISOString(),
   },
   {
     id: 'user-tech-1',

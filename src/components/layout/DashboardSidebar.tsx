@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { storageService } from '../../services/storageService';
 import { Avatar } from '../common/Avatar';
 import { 
   LayoutDashboard, 
@@ -21,12 +22,16 @@ import {
 export const DashboardSidebar: React.FC = () => {
   const { user, role } = useAuth();
 
+  const hasBookings = !!user && storageService.getBookings().some(b => b.customerId === user.id);
+  const hasReviews = !!user && storageService.getReviews().some(r => r.customerId === user.id);
+  const isNewAccount = !!user && (Date.now() - new Date(user.createdAt).getTime()) < 1000 * 60 * 60 * 24 * 7;
+
   const customerLinks = [
     { label: 'Tổng quan', path: '/customer/dashboard', icon: LayoutDashboard },
     { label: 'Yêu cầu của tôi', path: '/customer/requests', icon: ClipboardList },
-    { label: 'Lịch hẹn sửa chữa', path: '/my-bookings', icon: CalendarCheck },
+    ...(hasBookings ? [{ label: 'Lịch hẹn sửa chữa', path: '/my-bookings', icon: CalendarCheck }] : []),
     { label: 'Tin nhắn / Chat', path: '/chat', icon: MessageSquare },
-    { label: 'Đánh giá & Review', path: '/reviews', icon: Star },
+    ...(hasReviews ? [{ label: 'Đánh giá & Review', path: '/reviews', icon: Star }] : []),
   ];
 
   const technicianLinks = [
@@ -59,8 +64,19 @@ export const DashboardSidebar: React.FC = () => {
             <h4 className="text-xs font-bold text-slate-900 truncate">{user?.name}</h4>
             <p className="text-[11px] text-slate-500 truncate">{user?.phone}</p>
             <span className="inline-block text-[10px] uppercase font-bold text-blue-700 bg-blue-100/80 px-1.5 py-0.5 rounded mt-1">
-              {role === 'customer' ? 'Khách hàng' : role === 'technician' ? 'Thợ đối tác' : 'Quản trị viên'}
+              {role === 'customer' && isNewAccount
+                ? 'MỚI'
+                : role === 'customer'
+                ? 'Khách hàng'
+                : role === 'technician'
+                ? 'Thợ đối tác'
+                : 'Quản trị viên'}
             </span>
+            {role === 'customer' && isNewAccount && (
+              <p className="text-[10px] text-emerald-600 font-medium mt-0.5">
+                Tài khoản vừa được tạo
+              </p>
+            )}
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { storageService } from '../../services/storageService';
 import { Avatar } from '../common/Avatar';
 import { 
   Wrench, 
@@ -38,6 +39,14 @@ export const Navbar: React.FC = () => {
     if (role === 'technician') return '/technician/dashboard';
     return '/customer/dashboard';
   };
+
+  const hasBookings = user
+    ? storageService.getBookings().some(b => b.customerId === user.id)
+    : false;
+
+  const isNewAccount = !!user && (Date.now() - new Date(user.createdAt).getTime()) < 1000 * 60 * 60 * 24 * 7;
+
+  const roleBadgeLabel = role === 'customer' && isNewAccount ? 'MỚI' : role.toUpperCase();
 
   const navLinks = [
     { label: 'Trang chủ', path: '/' },
@@ -121,7 +130,7 @@ export const Navbar: React.FC = () => {
                   <Avatar src={user.avatar} name={user.name} size="sm" isOnline={true} />
                   <div className="text-left hidden xl:block">
                     <p className="text-xs font-bold text-slate-900 leading-tight">{user.name}</p>
-                    <p className="text-[10px] text-slate-500 capitalize">{role}</p>
+                    <p className="text-[10px] text-slate-500">{roleBadgeLabel}</p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-slate-400" />
                 </button>
@@ -138,8 +147,13 @@ export const Navbar: React.FC = () => {
                         <p className="text-xs text-slate-500 font-medium">Tài khoản</p>
                         <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
                         <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold uppercase">
-                          {role}
+                          {roleBadgeLabel}
                         </span>
+                        {role === 'customer' && isNewAccount && (
+                          <p className="text-[10px] text-emerald-600 font-medium mt-1">
+                            Tài khoản vừa được tạo
+                          </p>
+                        )}
                       </div>
 
                       <div className="py-1">
@@ -151,14 +165,16 @@ export const Navbar: React.FC = () => {
                           <LayoutDashboard className="w-4 h-4 text-blue-600" />
                           Bảng điều khiển
                         </Link>
-                        <Link
-                          to="/my-bookings"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
-                        >
-                          <CalendarCheck className="w-4 h-4 text-emerald-600" />
-                          Lịch hẹn của tôi
-                        </Link>
+                        {hasBookings && (
+                          <Link
+                            to="/my-bookings"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                          >
+                            <CalendarCheck className="w-4 h-4 text-emerald-600" />
+                            Lịch hẹn của tôi
+                          </Link>
+                        )}
                         <Link
                           to="/chat"
                           onClick={() => setUserDropdownOpen(false)}
