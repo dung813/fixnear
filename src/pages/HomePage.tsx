@@ -95,30 +95,30 @@ export const HomePage: React.FC = () => {
           
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold text-blue-200">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Nền tảng số hóa dịch vụ sửa chữa địa phương thông minh</span>
+            <span>Nền tảng kết nối thợ sửa chữa thông minh</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            FixNear – <br className="hidden sm:block" />
+            FixNear –{' '}
             <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-blue-200 bg-clip-text text-transparent">
-              Dịch vụ sửa chữa tại nhà nhanh chóng
+              Sửa chữa tại nhà nhanh chóng
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            FixNear số hóa toàn bộ chuỗi: Đăng yêu cầu → AI Matching → Báo giá điện tử → Đặt lịch → Ký quỹ an toàn Escrow → Nghiệm thu & Bảo hành.
+            Kết nối thợ giỏi gần bạn chỉ trong 30 giây. Báo giá minh bạch, thanh toán an toàn và bảo hành chu đáo.
           </p>
 
           {/* Quick CTA Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <Link to="/technicians">
               <Button size="lg" className="shadow-lg shadow-blue-600/30 text-sm sm:text-base">
-                Tìm & So sánh thợ ngay
+                Tìm thợ ngay
               </Button>
             </Link>
             <Link to="/post-request">
               <Button variant="secondary" size="lg" className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm sm:text-base">
-                Đăng yêu cầu sửa chữa
+                Đăng yêu cầu
               </Button>
             </Link>
           </div>
