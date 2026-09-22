@@ -1,25 +1,27 @@
-import { 
-  Technician, 
-  ServiceRequest, 
-  Booking, 
-  Review, 
-  User, 
-  Conversation, 
-  ChatMessage, 
-  ServiceCategory, 
+import {
+  Technician,
+  ServiceRequest,
+  Booking,
+  Review,
+  User,
+  Conversation,
+  ChatMessage,
+  ServiceCategory,
   DisputeTicket,
-  EQuote 
+  EQuote,
+  Address
 } from '../types';
-import { 
-  INITIAL_CATEGORIES, 
-  INITIAL_TECHNICIANS, 
-  INITIAL_REQUESTS, 
-  INITIAL_BOOKINGS, 
-  INITIAL_REVIEWS, 
-  DEMO_USERS, 
-  INITIAL_CONVERSATIONS, 
+import {
+  INITIAL_CATEGORIES,
+  INITIAL_TECHNICIANS,
+  INITIAL_REQUESTS,
+  INITIAL_BOOKINGS,
+  INITIAL_REVIEWS,
+  DEMO_USERS,
+  INITIAL_CONVERSATIONS,
   INITIAL_MESSAGES,
-  INITIAL_DISPUTES 
+  INITIAL_DISPUTES,
+  INITIAL_ADDRESSES
 } from '../data/mockData';
 
 const STORAGE_KEYS = {
@@ -33,6 +35,7 @@ const STORAGE_KEYS = {
   CONVERSATIONS: 'fixnear_conversations',
   MESSAGES: 'fixnear_messages',
   DISPUTES: 'fixnear_disputes',
+  ADDRESSES: 'fixnear_addresses',
 };
 
 // Initialize DB with seed data if not present
@@ -66,6 +69,9 @@ export const initializeStorage = () => {
   }
   if (!localStorage.getItem(STORAGE_KEYS.DISPUTES)) {
     localStorage.setItem(STORAGE_KEYS.DISPUTES, JSON.stringify(INITIAL_DISPUTES));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.ADDRESSES)) {
+    localStorage.setItem(STORAGE_KEYS.ADDRESSES, JSON.stringify(INITIAL_ADDRESSES));
   }
 };
 
@@ -243,6 +249,42 @@ export const storageService = {
     setItem(STORAGE_KEYS.USERS, list);
   },
 
+  // Saved Addresses
+  getAllAddresses(): Address[] {
+    return getItem<Address[]>(STORAGE_KEYS.ADDRESSES, INITIAL_ADDRESSES);
+  },
+  getAddresses(userId: string): Address[] {
+    return this.getAllAddresses().filter(a => a.userId === userId);
+  },
+  addAddress(addr: Address): void {
+    const list = this.getAllAddresses();
+    if (addr.isDefault) {
+      list.forEach(a => { if (a.userId === addr.userId) a.isDefault = false; });
+    }
+    list.push(addr);
+    setItem(STORAGE_KEYS.ADDRESSES, list);
+  },
+  updateAddress(id: string, updates: Partial<Address>): void {
+    const list = this.getAllAddresses();
+    const idx = list.findIndex(a => a.id === id);
+    if (idx !== -1) {
+      if (updates.isDefault) {
+        list.forEach(a => { if (a.userId === list[idx].userId) a.isDefault = false; });
+      }
+      list[idx] = { ...list[idx], ...updates };
+      setItem(STORAGE_KEYS.ADDRESSES, list);
+    }
+  },
+  deleteAddress(id: string): void {
+    const list = this.getAllAddresses().filter(a => a.id !== id);
+    setItem(STORAGE_KEYS.ADDRESSES, list);
+  },
+  setDefaultAddress(userId: string, id: string): void {
+    const list = this.getAllAddresses();
+    list.forEach(a => { if (a.userId === userId) a.isDefault = a.id === id; });
+    setItem(STORAGE_KEYS.ADDRESSES, list);
+  },
+
   // Chat Conversations & Messages
   getConversations(): Conversation[] {
     return getItem<Conversation[]>(STORAGE_KEYS.CONVERSATIONS, INITIAL_CONVERSATIONS);
@@ -299,6 +341,7 @@ export const storageService = {
     localStorage.removeItem(STORAGE_KEYS.CONVERSATIONS);
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
     localStorage.removeItem(STORAGE_KEYS.DISPUTES);
+    localStorage.removeItem(STORAGE_KEYS.ADDRESSES);
     initializeStorage();
     window.location.reload();
   }

@@ -13,6 +13,16 @@ export interface User {
   createdAt: string;
 }
 
+export interface Address {
+  id: string;
+  userId: string;
+  label: string;
+  address: string;
+  district: string;
+  city: 'Hà Nội' | 'TP. Hồ Chí Minh';
+  isDefault: boolean;
+}
+
 export interface ServiceItem {
   id: string;
   name: string;

@@ -8,7 +8,8 @@ import {
   Conversation, 
   ChatMessage,
   DisputeTicket,
-  EQuote
+  EQuote,
+  Address
 } from '../types';
 
 export const INITIAL_CATEGORIES: ServiceCategory[] = [
@@ -546,6 +547,18 @@ export const DEMO_USERS: User[] = [
     district: 'Nam Từ Liêm',
     city: 'Hà Nội',
     createdAt: '2023-01-01T00:00:00Z',
+  }
+];
+
+export const INITIAL_ADDRESSES: Address[] = [
+  {
+    id: 'addr-1',
+    userId: 'user-cust-1',
+    label: 'Nhà riêng',
+    address: 'Căn 1502 Discovery Complex, 302 Cầu Giấy',
+    district: 'Cầu Giấy',
+    city: 'Hà Nội',
+    isDefault: true,
   }
 ];
 

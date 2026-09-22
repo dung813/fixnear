@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { storageService } from '../../services/storageService';
 import { Avatar } from '../common/Avatar';
+import { CreateRequestModal } from '../requests/CreateRequestModal';
 import { 
   Wrench, 
   Search, 
@@ -24,6 +25,7 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, role } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [createRequestOpen, setCreateRequestOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState<'Hà Nội' | 'TP. Hồ Chí Minh'>('Hà Nội');
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,13 +115,14 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/post-request"
+            <button
+              type="button"
+              onClick={() => setCreateRequestOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm hover:shadow-brand transition-all active:scale-[0.98]"
             >
               <PlusCircle className="w-4 h-4" />
               Đăng yêu cầu sửa
-            </Link>
+            </button>
 
             {isAuthenticated && user ? (
               <div className="relative">
@@ -228,12 +231,13 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
-            <Link
-              to="/post-request"
+            <button
+              type="button"
+              onClick={() => setCreateRequestOpen(true)}
               className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold"
             >
               Đăng yêu cầu
-            </Link>
+            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition"
@@ -332,6 +336,8 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
       )}
+
+      <CreateRequestModal isOpen={createRequestOpen} onClose={() => setCreateRequestOpen(false)} />
     </header>
   );
 };

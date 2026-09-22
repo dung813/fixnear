@@ -8,6 +8,8 @@ import { StatCard } from '../components/common/StatCard';
 import { ReviewModal } from '../components/technicians/ReviewModal';
 import { DisputeModal } from '../components/technicians/DisputeModal';
 import { SmartMatchingModal } from '../components/requests/SmartMatchingModal';
+import { CreateRequestModal } from '../components/requests/CreateRequestModal';
+import { AddressBook } from '../components/account/AddressBook';
 import { Avatar } from '../components/common/Avatar';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
@@ -42,6 +44,7 @@ export const CustomerDashboardPage: React.FC = () => {
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null);
   const [selectedBookingForDispute, setSelectedBookingForDispute] = useState<Booking | null>(null);
   const [matchingRequest, setMatchingRequest] = useState<ServiceRequest | null>(null);
+  const [createRequestOpen, setCreateRequestOpen] = useState(false);
 
   // Profile Edit State
   const [name, setName] = useState(user?.name || '');
@@ -110,12 +113,14 @@ export const CustomerDashboardPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link to="/post-request">
-            <Button size="md" className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/30 text-xs sm:text-sm">
-              <PlusCircle className="w-4 h-4 mr-1.5" />
-              Đăng yêu cầu sửa mới
-            </Button>
-          </Link>
+          <Button
+            size="md"
+            onClick={() => setCreateRequestOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/30 text-xs sm:text-sm"
+          >
+            <PlusCircle className="w-4 h-4 mr-1.5" />
+            Đăng yêu cầu sửa mới
+          </Button>
           <Link to="/technicians">
             <Button variant="secondary" size="md" className="bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs sm:text-sm">
               Tìm thợ quanh đây
@@ -207,9 +212,13 @@ export const CustomerDashboardPage: React.FC = () => {
                 <h3 className="font-bold text-base text-slate-900">
                   Các yêu cầu sửa chữa đang hoạt động
                 </h3>
-                <Link to="/post-request" className="text-xs font-bold text-blue-600 hover:text-blue-700">
+                <button
+                  type="button"
+                  onClick={() => setCreateRequestOpen(true)}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700"
+                >
                   + Đăng việc mới
-                </Link>
+                </button>
               </div>
 
               {requests.length > 0 ? (
@@ -275,9 +284,9 @@ export const CustomerDashboardPage: React.FC = () => {
               ) : (
                 <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 text-slate-500 space-y-3">
                   <p>Bạn chưa đăng yêu cầu sửa chữa nào.</p>
-                  <Link to="/post-request">
-                    <Button size="sm">Đăng yêu cầu đầu tiên ngay</Button>
-                  </Link>
+                  <Button size="sm" onClick={() => setCreateRequestOpen(true)}>
+                    Đăng yêu cầu đầu tiên ngay
+                  </Button>
                 </div>
               )}
             </div>
@@ -449,37 +458,71 @@ export const CustomerDashboardPage: React.FC = () => {
 
           {/* TAB 3: PROFILE SETTINGS */}
           {activeTab === 'profile' && (
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-card space-y-4">
-              <h3 className="font-bold text-base text-slate-900 pb-3 border-b border-slate-100">
-                Cập nhật thông tin cá nhân
-              </h3>
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-card space-y-4">
+                <h3 className="font-bold text-base text-slate-900 pb-3 border-b border-slate-100">
+                  Cập nhật thông tin cá nhân
+                </h3>
 
-              <form onSubmit={handleUpdateProfileSubmit} className="space-y-4 max-w-lg">
-                <Input
-                  label="Họ và tên"
-                  value={name}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Số điện thoại"
-                  value={phone}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Địa chỉ mặc định"
-                  value={address}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value)}
-                />
-                <Button type="submit">Lưu thông tin</Button>
-              </form>
+                <div className="flex items-center gap-4">
+                  <Avatar src={user?.avatar} name={user?.name || 'Người dùng'} size="xl" />
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">{user?.name}</p>
+                    <p className="text-[11px] text-slate-500">{user?.email}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateProfile({
+                          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=2563eb&color=fff&bold=true&_=${Date.now()}`,
+                        });
+                      }}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700 mt-1"
+                    >
+                      Đổi ảnh đại diện
+                    </button>
+                  </div>
+                </div>
+
+                <form onSubmit={handleUpdateProfileSubmit} className="space-y-4 max-w-lg pt-2">
+                  <Input
+                    label="Họ và tên"
+                    value={name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Số điện thoại"
+                    value={phone}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="Địa chỉ mặc định"
+                    value={address}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value)}
+                  />
+                  <Button type="submit">Lưu thông tin</Button>
+                </form>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-card space-y-4">
+                <h3 className="font-bold text-base text-slate-900 pb-3 border-b border-slate-100">
+                  Danh sách địa chỉ đã lưu
+                </h3>
+                <AddressBook />
+              </div>
             </div>
           )}
 
         </div>
 
       </div>
+
+      {/* Create Request Modal */}
+      <CreateRequestModal
+        isOpen={createRequestOpen}
+        onClose={() => setCreateRequestOpen(false)}
+      />
 
       {/* Review Modal */}
       <ReviewModal
