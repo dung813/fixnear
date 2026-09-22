@@ -88,6 +88,7 @@ export const OrderDetailPage: React.FC = () => {
 
   useEffect(() => {
     loadBooking();
+    setHasAutoOpenedReview(false);
     window.addEventListener('fixnear_storage_update', loadBooking);
     return () => window.removeEventListener('fixnear_storage_update', loadBooking);
   }, [id]);
