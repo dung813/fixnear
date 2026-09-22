@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { CityProvider } from './context/CityContext';
 import { RoleDemoBar } from './components/layout/RoleDemoBar';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
@@ -41,6 +42,7 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <AuthProvider>
         <NotificationProvider>
+        <CityProvider>
           <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
             <ScrollToTop />
             <RoleDemoBar />
@@ -76,6 +78,7 @@ export const App: React.FC = () => {
 
             <Footer />
           </div>
+        </CityProvider>
         </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>

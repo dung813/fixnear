@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useCity } from '../../context/CityContext';
 import { storageService } from '../../services/storageService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { Avatar } from '../common/Avatar';
@@ -27,7 +28,7 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [createRequestOpen, setCreateRequestOpen] = useState(false);
-  const [selectedCity, setSelectedCity] = useState<'Hà Nội' | 'TP. Hồ Chí Minh'>('Hà Nội');
+  const { city: selectedCity, setCity: setSelectedCity } = useCity();
   const navigate = useNavigate();
   const location = useLocation();
   const requireAuth = useRequireAuth();

@@ -3,10 +3,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Technician, ServiceCategory } from '../types';
 import { useRequireAuth } from '../hooks/useRequireAuth';
+import { useCity } from '../context/CityContext';
 import { TechCard } from '../components/technicians/TechCard';
 import { BookingModal } from '../components/technicians/BookingModal';
 import { CompareModal } from '../components/technicians/CompareModal';
 import { Button } from '../components/common/Button';
+import { Avatar } from '../components/common/Avatar';
 import { formatCurrency } from '../utils/formatters';
 import {
   Search,
@@ -15,7 +17,11 @@ import {
   RotateCcw,
   ArrowUpDown,
   Scale,
-  CalendarCheck
+  CalendarCheck,
+  List,
+  Map as MapIcon,
+  Star,
+  MapPin
 } from 'lucide-react';
 
 const todayISO = () => new Date().toISOString().split('T')[0];
@@ -24,24 +30,46 @@ export const FindTechniciansPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const requireAuth = useRequireAuth();
+  const { city: headerCity, setCity: setHeaderCity } = useCity();
 
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [selectedTechForBooking, setSelectedTechForBooking] = useState<Technician | null>(null);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [activeMapPin, setActiveMapPin] = useState<string | null>(null);
 
   // Compare state
   const [compareList, setCompareList] = useState<Technician[]>([]);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
 
-  // Filter States initialized from URL params
+  // Filter States initialized from URL params, falling back to the city
+  // currently selected in the Header so the two stay in sync by default.
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('cat') || '');
-  const [selectedCity, setSelectedCity] = useState(searchParams.get('city') || 'Tất cả');
+  const [selectedCity, setSelectedCity] = useState(searchParams.get('city') || headerCity);
   const [selectedDistrict, setSelectedDistrict] = useState(searchParams.get('district') || 'Tất cả');
+
+  // Keep this page's city filter in sync whenever the Header's city changes
+  // (e.g. the visitor switches city from the navbar while already on this page).
+  useEffect(() => {
+    if (!searchParams.get('city')) {
+      setSelectedCity(headerCity);
+      setSelectedDistrict('Tất cả');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headerCity]);
+
+  const handleCityChange = (value: string) => {
+    setSelectedCity(value);
+    setSelectedDistrict('Tất cả');
+    if (value === 'Hà Nội' || value === 'TP. Hồ Chí Minh') {
+      setHeaderCity(value);
+    }
+  };
   const [maxDistance, setMaxDistance] = useState<number>(10);
   const [minRating, setMinRating] = useState<number>(0);
-  const [maxPrice, setMaxPrice] = useState<number>(500000);
+  const [maxPrice, setMaxPrice] = useState<number>(1000000);
   const [minExperience, setMinExperience] = useState<number>(0);
   const [availabilityMode, setAvailabilityMode] = useState<'any' | 'today' | 'date'>('any');
   const [availabilityDate, setAvailabilityDate] = useState<string>(todayISO());
@@ -76,6 +104,15 @@ export const FindTechniciansPage: React.FC = () => {
     }
     return ['Tất cả'];
   }, [selectedCity]);
+
+  // Deterministic pseudo-position for the mock Map View (no real geocoding backend available)
+  const getMockPinPosition = (id: string): { top: number; left: number } => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = (hash * 37 + id.charCodeAt(i)) % 10000;
+    const top = 12 + (hash % 76); // keep within 12%-88% so pins don't clip the edges
+    const left = 12 + ((hash * 7) % 76);
+    return { top, left };
+  };
 
   // Compute a 0-100 "match score" combining proximity, rating and open-schedule signals
   const getMatchScore = (t: Technician): number => {
@@ -186,7 +223,7 @@ export const FindTechniciansPage: React.FC = () => {
     setSelectedDistrict('Tất cả');
     setMaxDistance(10);
     setMinRating(0);
-    setMaxPrice(500000);
+    setMaxPrice(1000000);
     setMinExperience(0);
     setAvailabilityMode('any');
     setAvailabilityDate(todayISO());
@@ -305,10 +342,7 @@ export const FindTechniciansPage: React.FC = () => {
               </label>
               <select
                 value={selectedCity}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                  setSelectedCity(e.target.value);
-                  setSelectedDistrict('Tất cả');
-                }}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleCityChange(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-800 focus:border-blue-600 focus:outline-none"
               >
                 <option value="Tất cả">Tất cả tỉnh thành</option>
@@ -392,13 +426,17 @@ export const FindTechniciansPage: React.FC = () => {
             </div>
             <input
               type="range"
-              min={80000}
-              max={500000}
-              step={20000}
+              min={50000}
+              max={1000000}
+              step={50000}
               value={maxPrice}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxPrice(Number(e.target.value))}
               className="w-full accent-blue-600"
             />
+            <div className="flex justify-between text-[10px] text-slate-400">
+              <span>50.000đ</span>
+              <span>1.000.000đ</span>
+            </div>
           </div>
 
           {/* Experience Years Filter */}
@@ -498,12 +536,30 @@ export const FindTechniciansPage: React.FC = () => {
         <div className="md:col-span-3 space-y-4">
           
           {/* Sorting Bar */}
-          <div className="bg-white rounded-2xl p-3 px-4 border border-slate-200/80 shadow-card flex items-center justify-between text-xs">
-            <span className="text-slate-500">
-              Sắp xếp kết quả theo:
-            </span>
+          <div className="bg-white rounded-2xl p-3 px-4 border border-slate-200/80 shadow-card flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl font-semibold">
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+                  viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" /> Dạng danh sách
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('map')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+                  viewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <MapIcon className="w-3.5 h-3.5" /> Dạng bản đồ
+              </button>
+            </div>
 
             <div className="flex items-center gap-2">
+              <span className="text-slate-500 hidden sm:inline">Sắp xếp theo:</span>
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
               <select
                 value={sortBy}
@@ -519,19 +575,76 @@ export const FindTechniciansPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Technicians List Grid */}
+          {/* Technicians List / Map View */}
           {filteredTechs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredTechs.map((tech: Technician) => (
-                <TechCard
-                  key={tech.id}
-                  technician={tech}
-                  onQuickBook={t => setSelectedTechForBooking(t)}
-                  onCompareToggle={handleCompareToggle}
-                  isComparing={compareList.some(t => t.id === tech.id)}
-                />
-              ))}
-            </div>
+            viewMode === 'list' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filteredTechs.map((tech: Technician) => (
+                  <TechCard
+                    key={tech.id}
+                    technician={tech}
+                    onQuickBook={t => setSelectedTechForBooking(t)}
+                    onCompareToggle={handleCompareToggle}
+                    isComparing={compareList.some(t => t.id === tech.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="relative w-full h-[520px] rounded-2xl border border-slate-200/80 shadow-card overflow-hidden bg-[linear-gradient(#e2e8f0_1px,transparent_1px),linear-gradient(90deg,#e2e8f0_1px,transparent_1px)] bg-[length:32px_32px] bg-slate-50">
+                <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur px-3 py-1.5 rounded-xl shadow-card text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
+                  <MapIcon className="w-3.5 h-3.5 text-blue-600" />
+                  Bản đồ minh họa - {selectedCity === 'Tất cả' ? 'Toàn quốc' : selectedCity}
+                </div>
+
+                {filteredTechs.map(tech => {
+                  const pos = getMockPinPosition(tech.id);
+                  const isActive = activeMapPin === tech.id;
+                  return (
+                    <button
+                      key={tech.id}
+                      type="button"
+                      onClick={() => setActiveMapPin(isActive ? null : tech.id)}
+                      style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
+                      className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center group"
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-full border-2 shadow-lg overflow-hidden transition-transform ${
+                          isActive ? 'border-blue-600 scale-110 z-20' : 'border-white z-10 hover:scale-110'
+                        }`}
+                      >
+                        <Avatar src={tech.avatar} name={tech.name} size="sm" />
+                      </div>
+                      <div className={`w-2.5 h-2.5 -mt-1 rotate-45 ${isActive ? 'bg-blue-600' : 'bg-white'} border-r-2 border-b-2 ${isActive ? 'border-blue-600' : 'border-white'} shadow`} />
+
+                      {isActive && (
+                        <div className="absolute top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 p-3 text-left z-30 animate-scale-in">
+                          <p className="font-bold text-xs text-slate-900 truncate">{tech.name}</p>
+                          <p className="text-[10px] text-slate-500 truncate mb-1.5">{tech.title}</p>
+                          <div className="flex items-center justify-between text-[11px] mb-2">
+                            <span className="flex items-center gap-1 font-semibold text-amber-600">
+                              <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> {tech.rating}
+                            </span>
+                            <span className="flex items-center gap-1 text-slate-500">
+                              <MapPin className="w-3 h-3" /> ~{tech.distanceKm}km
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="w-full text-[11px] font-bold"
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigate(`/technicians/${tech.id}`);
+                            }}
+                          >
+                            Xem hồ sơ
+                          </Button>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )
           ) : (
             <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-card space-y-3">
               <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">

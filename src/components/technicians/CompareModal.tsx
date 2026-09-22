@@ -120,7 +120,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({
 
               {/* Response Time */}
               <tr>
-                <td className="p-3 bg-slate-50 font-semibold text-slate-600">Tốc độ phản hồi</td>
+                <td className="p-3 bg-slate-50 font-semibold text-slate-600">Thời gian đến</td>
                 {technicians.map(tech => (
                   <td key={tech.id} className="p-3 text-center border-l border-slate-100 font-semibold text-emerald-700">
                     ~{tech.responseTimeMinutes} phút

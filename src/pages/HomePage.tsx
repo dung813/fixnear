@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { ServiceCategory, Technician, ServiceRequest } from '../types';
 import { useRequireAuth } from '../hooks/useRequireAuth';
+import { useCity } from '../context/CityContext';
 import { TechCard } from '../components/technicians/TechCard';
 import { BookingModal } from '../components/technicians/BookingModal';
 import { CompareModal } from '../components/technicians/CompareModal';
@@ -45,7 +46,7 @@ export const HomePage: React.FC = () => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedCity, setSelectedCity] = useState('Hà Nội');
+  const { city: selectedCity, setCity: setSelectedCity } = useCity();
   const [selectedDistrict, setSelectedDistrict] = useState('Tất cả quận');
 
   useEffect(() => {
@@ -165,7 +166,7 @@ export const HomePage: React.FC = () => {
                 <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <select
                   value={selectedCity}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCity(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCity(e.target.value as any)}
                   aria-label="Chọn thành phố"
                   className="w-full bg-transparent text-xs sm:text-sm text-slate-700 font-medium focus:outline-none cursor-pointer"
                 >
