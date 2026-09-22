@@ -6,14 +6,22 @@ import { Conversation, ChatMessage } from '../types';
 import { Avatar } from '../components/common/Avatar';
 import { Button } from '../components/common/Button';
 import { formatDateTime, formatRelativeTime } from '../utils/formatters';
-import { 
-  Send, 
-  Image as ImageIcon, 
-  Phone, 
-  Search, 
-  CheckCheck, 
+import {
+  Send,
+  Image as ImageIcon,
+  Video,
+  Phone,
+  Search,
+  Check,
+  CheckCheck,
   ShieldCheck
 } from 'lucide-react';
+
+const QUICK_REPLIES = [
+  'Thợ có thể đến sớm hơn không?',
+  'Báo giá sơ bộ khoảng bao nhiêu?',
+  'Địa chỉ cụ thể là...',
+];
 
 export const ChatPage: React.FC = () => {
   const { user, role } = useAuth();
@@ -60,9 +68,25 @@ export const ChatPage: React.FC = () => {
 
   const currentConv = conversations.find(c => c.id === selectedConvId) || conversations[0];
 
-  const handleSendMessage = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!inputText.trim() || !currentConv) return;
+  const getAutoReplyText = (originalText: string, isReplyFromTech: boolean): string => {
+    if (!isReplyFromTech) {
+      return 'Dạ vâng ạ, để em kiểm tra lại thông tin rồi phản hồi anh/chị ngay!';
+    }
+    const lower = originalText.toLowerCase();
+    if (lower.includes('sớm hơn')) {
+      return 'Dạ em có thể sắp xếp đến sớm hơn khoảng 15-20 phút nếu anh/chị cần gấp ạ.';
+    }
+    if (lower.includes('báo giá') || lower.includes('bao nhiêu')) {
+      return 'Dạ chi phí sẽ tùy tình trạng máy thực tế, nhưng thường dao động trong khoảng báo giá tạm tính đã hiển thị. Em sẽ báo giá chính xác sau khi kiểm tra trực tiếp ạ.';
+    }
+    if (lower.includes('địa chỉ')) {
+      return 'Dạ em đã ghi nhận địa chỉ, anh/chị có thể gửi thêm số nhà/ngõ cụ thể hoặc định vị Google Maps giúp em nhé!';
+    }
+    return 'Dạ em nhận được thông tin rồi ạ, em đang chuẩn bị dụng cụ để qua điểm hẹn đúng giờ nhé anh/chị!';
+  };
+
+  const sendText = (text: string) => {
+    if (!text.trim() || !currentConv) return;
 
     const senderRole = role === 'technician' ? 'technician' : 'customer';
     const senderName = user?.name || (role === 'technician' ? currentConv.technicianName : currentConv.customerName);
@@ -76,7 +100,7 @@ export const ChatPage: React.FC = () => {
       senderName,
       senderRole,
       recipientId,
-      text: inputText.trim(),
+      text: text.trim(),
       timestamp: new Date().toISOString(),
       isRead: true,
     };
@@ -90,9 +114,7 @@ export const ChatPage: React.FC = () => {
     setTimeout(() => {
       setIsTyping(false);
       const isReplyFromTech = senderRole === 'customer';
-      const autoReplyText = isReplyFromTech
-        ? 'Dạ em nhận được thông tin rồi ạ, em đang chuẩn bị dụng cụ để qua điểm hẹn đúng giờ nhé anh/chị!'
-        : 'Cảm ơn anh! Em đã ghi nhận lịch hẹn ạ.';
+      const autoReplyText = getAutoReplyText(text, isReplyFromTech);
 
       const replyMsg: ChatMessage = {
         id: `msg-${Date.now()}`,
@@ -109,7 +131,16 @@ export const ChatPage: React.FC = () => {
       storageService.sendMessage(replyMsg);
       setMessages(prev => [...prev, replyMsg]);
       scrollToBottom();
-    }, 1600);
+    }, 1200 + Math.random() * 800);
+  };
+
+  const handleSendMessage = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    sendText(inputText);
+  };
+
+  const handleQuickReply = (text: string) => {
+    sendText(text);
   };
 
   const handleSendSampleImage = () => {
@@ -124,6 +155,26 @@ export const ChatPage: React.FC = () => {
       recipientId: role === 'technician' ? currentConv.customerId : currentConv.technicianId,
       text: 'Ảnh chụp vị trí máy gặp sự cố:',
       imageUrl: sampleImg,
+      timestamp: new Date().toISOString(),
+      isRead: true,
+    };
+    storageService.sendMessage(newMsg);
+    setMessages(prev => [...prev, newMsg]);
+    scrollToBottom();
+  };
+
+  const handleSendSampleVideo = () => {
+    if (!currentConv) return;
+    const sampleVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+    const newMsg: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      conversationId: currentConv.id,
+      senderId: user?.id || 'user-cust-1',
+      senderName: user?.name || 'Khách hàng',
+      senderRole: role === 'technician' ? 'technician' : 'customer',
+      recipientId: role === 'technician' ? currentConv.customerId : currentConv.technicianId,
+      text: 'Video quay lại tình trạng lỗi:',
+      videoUrl: sampleVideo,
       timestamp: new Date().toISOString(),
       isRead: true,
     };
@@ -251,12 +302,23 @@ export const ChatPage: React.FC = () => {
                           className="rounded-xl max-h-48 object-cover w-full mb-2"
                         />
                       )}
+                      {msg.videoUrl && (
+                        <video
+                          src={msg.videoUrl}
+                          controls
+                          className="rounded-xl max-h-48 w-full mb-2 bg-black"
+                        />
+                      )}
                       <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                     </div>
 
                     <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-400 px-1">
                       <span>{msg.timestamp ? formatDateTime(msg.timestamp) : 'Vừa xong'}</span>
-                      {isMe && <CheckCheck className="w-3 h-3 text-blue-500" />}
+                      {isMe && (
+                        msg.isRead
+                          ? <span title="Đã xem"><CheckCheck className="w-3 h-3 text-blue-500" /></span>
+                          : <span title="Đã gửi"><Check className="w-3 h-3 text-slate-400" /></span>
+                      )}
                     </div>
                   </div>
                 );
@@ -271,6 +333,20 @@ export const ChatPage: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Quick Replies */}
+            <div className="px-3 pt-2 bg-white border-t border-slate-100 flex flex-wrap gap-1.5">
+              {QUICK_REPLIES.map(q => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => handleQuickReply(q)}
+                  className="px-2.5 py-1.5 rounded-full bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 text-[11px] font-medium transition"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
             {/* Input Bar */}
             <form
               onSubmit={handleSendMessage}
@@ -283,6 +359,15 @@ export const ChatPage: React.FC = () => {
                 className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition"
               >
                 <ImageIcon className="w-5 h-5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSendSampleVideo}
+                title="Gửi video mẫu sự cố"
+                className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition"
+              >
+                <Video className="w-5 h-5" />
               </button>
 
               <input

@@ -199,6 +199,7 @@ export interface ChatMessage {
   recipientId: string;
   text: string;
   imageUrl?: string;
+  videoUrl?: string;
   isOffer?: boolean;
   offerAmount?: number;
   quoteDetails?: {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storageService';
 import { Booking } from '../types';
@@ -8,20 +8,34 @@ import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { ReviewModal } from '../components/technicians/ReviewModal';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { 
-  CalendarCheck, 
-  Phone, 
-  MessageSquare, 
-  Star, 
-  Calendar
+import {
+  CalendarCheck,
+  Phone,
+  MessageSquare,
+  Star,
+  Calendar,
+  ChevronRight
 } from 'lucide-react';
 
 export const MyBookingsPage: React.FC = () => {
   const { user, role } = useAuth();
+  const navigate = useNavigate();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null);
+
+  const handleChat = (bk: Booking) => {
+    const technician = storageService.getTechnicianById(bk.technicianId);
+    if (!technician) return;
+    const conv = storageService.getOrCreateConversation(
+      user?.id || bk.customerId,
+      user?.name || bk.customerName,
+      user?.avatar || bk.customerAvatar,
+      technician
+    );
+    navigate(`/chat?conv=${conv.id}`);
+  };
 
   const loadBookings = () => {
     const all = storageService.getBookings();
@@ -164,24 +178,45 @@ export const MyBookingsPage: React.FC = () => {
                     <Phone className="w-3.5 h-3.5 text-emerald-600" />
                     Gọi {role === 'technician' ? bk.customerPhone : bk.technicianPhone}
                   </a>
-                  <Link
-                    to="/chat"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
-                    Chat trực tiếp
-                  </Link>
+                  {role === 'customer' ? (
+                    <button
+                      type="button"
+                      onClick={() => handleChat(bk)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                      Chat trực tiếp
+                    </button>
+                  ) : (
+                    <Link
+                      to="/chat"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                      Chat trực tiếp
+                    </Link>
+                  )}
                 </div>
 
-                {role === 'customer' && bk.status === 'completed' && (
-                  <Button
-                    size="sm"
-                    onClick={() => setSelectedBookingForReview(bk)}
-                    leftIcon={<Star className="w-3.5 h-3.5 text-amber-300" />}
-                  >
-                    Đánh giá thợ
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  {role === 'customer' && bk.status === 'completed' && (
+                    <Button
+                      size="sm"
+                      onClick={() => setSelectedBookingForReview(bk)}
+                      leftIcon={<Star className="w-3.5 h-3.5 text-amber-300" />}
+                    >
+                      Đánh giá thợ
+                    </Button>
+                  )}
+                  {role === 'customer' && (
+                    <Link
+                      to={`/my-bookings/${bk.id}`}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700"
+                    >
+                      Theo dõi tiến độ <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
           ))}

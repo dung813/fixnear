@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Technician, Booking, ServiceItem, PaymentMethod } from '../../types';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Technician, Booking, ServiceItem, PaymentMethod, Address } from '../../types';
 import { storageService } from '../../services/storageService';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -8,12 +9,12 @@ import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { Avatar } from '../common/Avatar';
 import { formatCurrency } from '../../utils/formatters';
-import { 
-  ShieldCheck, 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  CheckCircle2, 
+import {
+  ShieldCheck,
+  Calendar,
+  Clock,
+  MapPin,
+  CheckCircle2,
   Sparkles,
   Lock
 } from 'lucide-react';
@@ -33,6 +34,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { success, error } = useNotification();
+  const navigate = useNavigate();
 
   const [selectedServiceId, setSelectedServiceId] = useState<string>(
     preSelectedService?.id || technician?.servicesOffered[0]?.id || ''
@@ -41,9 +43,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('09:00 - 11:00');
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
   const [customerAddress, setCustomerAddress] = useState<string>(
     user?.address || 'Căn 1502 Discovery Complex, 302 Cầu Giấy, Hà Nội'
   );
+  const [directionNote, setDirectionNote] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>(
     user?.phone || '0912 333 444'
   );
@@ -53,6 +58,19 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('escrow');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    const addrs = storageService.getAddresses(user.id);
+    setSavedAddresses(addrs);
+    const defaultAddr = addrs.find(a => a.isDefault) || addrs[0];
+    if (defaultAddr) {
+      setSelectedAddressId(defaultAddr.id);
+      setCustomerAddress(defaultAddr.address);
+    } else {
+      setSelectedAddressId('new');
+    }
+  }, [isOpen, user]);
 
   if (!technician) return null;
 
@@ -76,6 +94,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
     setIsSubmitting(true);
 
+    const finalAddress = directionNote.trim()
+      ? `${customerAddress.trim()} (Chỉ đường: ${directionNote.trim()})`
+      : customerAddress.trim();
+    const finalNotes = notes.trim();
+
     setTimeout(() => {
       const newBooking: Booking = {
         id: `bk-${Date.now()}`,
@@ -83,7 +106,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
         customerAvatar: user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
-        customerAddress: customerAddress.trim(),
+        customerAddress: finalAddress,
         technicianId: technician.id,
         technicianName: technician.name,
         technicianAvatar: technician.avatar,
@@ -93,10 +116,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         serviceName: currentService?.name || 'Sửa chữa kiểm tra tận nhà',
         date: selectedDate,
         timeSlot: selectedTimeSlot,
-        address: customerAddress.trim(),
+        address: finalAddress,
         city: technician.city,
         district: technician.district,
-        notes: notes.trim(),
+        notes: finalNotes,
         estimatedPrice,
         paymentMethod,
         paymentStatus: paymentMethod === 'escrow' ? 'holding_escrow' : 'cash_on_delivery',
@@ -109,12 +132,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       storageService.addBooking(newBooking);
       setIsSubmitting(false);
       success(
-        'Đặt lịch thành công!',
-        paymentMethod === 'escrow' 
+        'Đặt lịch thành công! Đơn đang ở trạng thái "Chờ tiếp nhận".',
+        paymentMethod === 'escrow'
           ? 'Tiền cọc được FixNear Escrow tạm giữ an toàn. Thợ sẽ liên hệ bạn ngay.'
           : 'Thợ sẽ liên hệ xác nhận trong vòng 10-15 phút.'
       );
       onClose();
+      navigate(`/my-bookings/${newBooking.id}`);
     }, 600);
   };
 
@@ -196,12 +220,74 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
         {/* Address and Contact Details */}
         <div className="space-y-3 pt-2 border-t border-slate-100">
+          <label className="block font-bold text-slate-700 uppercase tracking-wider">
+            4. Địa chỉ thợ cần đến *
+          </label>
+
+          {savedAddresses.length > 0 && (
+            <div className="space-y-1.5">
+              {savedAddresses.map(addr => (
+                <label
+                  key={addr.id}
+                  className={`flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer transition ${
+                    selectedAddressId === addr.id
+                      ? 'border-blue-600 bg-blue-50/70'
+                      : 'border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="bookingAddressChoice"
+                    checked={selectedAddressId === addr.id}
+                    onChange={() => {
+                      setSelectedAddressId(addr.id);
+                      setCustomerAddress(addr.address);
+                    }}
+                    className="mt-0.5"
+                  />
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-800">{addr.label}</span>
+                    <p className="text-[11px] text-slate-500 truncate">{addr.address}, {addr.district}, {addr.city}</p>
+                  </div>
+                </label>
+              ))}
+              <label
+                className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition ${
+                  selectedAddressId === 'new'
+                    ? 'border-blue-600 bg-blue-50/70'
+                    : 'border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="bookingAddressChoice"
+                  checked={selectedAddressId === 'new'}
+                  onChange={() => {
+                    setSelectedAddressId('new');
+                    setCustomerAddress('');
+                  }}
+                />
+                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-blue-600" /> Nhập địa chỉ khác
+                </span>
+              </label>
+            </div>
+          )}
+
+          {(selectedAddressId === 'new' || savedAddresses.length === 0) && (
+            <Input
+              value={customerAddress}
+              onChange={(e: any) => setCustomerAddress(e.target.value)}
+              placeholder="Số nhà, tên tòa nhà, số ngõ/đường..."
+              required
+            />
+          )}
+
           <Input
-            label="4. Địa chỉ nhà chi tiết thợ cần đến *"
-            value={customerAddress}
-            onChange={(e: any) => setCustomerAddress(e.target.value)}
-            placeholder="Số nhà, tên tòa nhà, số ngõ/đường..."
-            required
+            label="Ghi chú chỉ đường (nếu có)"
+            value={directionNote}
+            onChange={(e: any) => setDirectionNote(e.target.value)}
+            placeholder="Ví dụ: Vào ngõ 12, nhà màu vàng cuối ngõ bên tay phải..."
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
