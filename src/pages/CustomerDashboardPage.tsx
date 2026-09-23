@@ -11,6 +11,7 @@ import { DisputeModal } from '../components/technicians/DisputeModal';
 import { SmartMatchingModal } from '../components/requests/SmartMatchingModal';
 import { CreateRequestModal } from '../components/requests/CreateRequestModal';
 import { QuotationModal } from '../components/orders/QuotationModal';
+import { DepositModal } from '../components/orders/DepositModal';
 import { AddressBook } from '../components/account/AddressBook';
 import { Avatar } from '../components/common/Avatar';
 import { Badge } from '../components/common/Badge';
@@ -35,7 +36,8 @@ import {
   Pencil,
   XCircle,
   History,
-  FileCheck
+  FileCheck,
+  QrCode
 } from 'lucide-react';
 
 export const CustomerDashboardPage: React.FC = () => {
@@ -56,6 +58,7 @@ export const CustomerDashboardPage: React.FC = () => {
   const [editRequestTarget, setEditRequestTarget] = useState<ServiceRequest | null>(null);
   const [cancelRequestTarget, setCancelRequestTarget] = useState<ServiceRequest | null>(null);
   const [quotationBooking, setQuotationBooking] = useState<Booking | null>(null);
+  const [depositBooking, setDepositBooking] = useState<Booking | null>(null);
 
   // Profile Edit State
   const [name, setName] = useState(user?.name || '');
@@ -478,22 +481,33 @@ export const CustomerDashboardPage: React.FC = () => {
                         </div>
 
                         <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <a
-                              href={`tel:${bk.technicianPhone}`}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                          {bk.paymentMethod === 'escrow' && !bk.depositPaid && bk.status === 'pending' ? (
+                            <Button
+                              size="sm"
+                              onClick={() => setDepositBooking(bk)}
+                              leftIcon={<QrCode className="w-3.5 h-3.5" />}
+                              className="font-bold text-xs"
                             >
-                              <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                              Gọi: {bk.technicianPhone}
-                            </a>
-                            <Link
-                              to="/chat"
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
-                              Chat với thợ
-                            </Link>
-                          </div>
+                              Đặt cọc để xem SĐT thợ
+                            </Button>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`tel:${bk.technicianPhone}`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                              >
+                                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                                Gọi: {bk.technicianPhone}
+                              </a>
+                              <Link
+                                to="/chat"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                                Chat với thợ
+                              </Link>
+                            </div>
+                          )}
 
                           <div className="flex items-center gap-2">
                             <Button
@@ -714,6 +728,21 @@ export const CustomerDashboardPage: React.FC = () => {
         booking={quotationBooking}
         onApproved={() => loadData()}
         onRejected={() => loadData()}
+        onCancelled={() => loadData()}
+      />
+
+      {/* QR Deposit + 10-Minute Hold Countdown */}
+      <DepositModal
+        isOpen={!!depositBooking}
+        booking={depositBooking}
+        onConfirmed={() => {
+          setDepositBooking(null);
+          loadData();
+        }}
+        onExpired={() => {
+          setDepositBooking(null);
+          loadData();
+        }}
       />
 
       {/* Review Modal */}

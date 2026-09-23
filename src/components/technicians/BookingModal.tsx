@@ -8,6 +8,7 @@ import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { Avatar } from '../common/Avatar';
+import { DepositModal } from '../orders/DepositModal';
 import { formatCurrency } from '../../utils/formatters';
 import {
   ShieldCheck,
@@ -16,8 +17,11 @@ import {
   MapPin,
   CheckCircle2,
   Sparkles,
-  Lock
+  Lock,
+  AlertTriangle
 } from 'lucide-react';
+
+const DEPOSIT_AMOUNT = 50000;
 
 export interface BookingModalProps {
   isOpen: boolean;
@@ -58,6 +62,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('escrow');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [slotConflict, setSlotConflict] = useState(false);
+  const [suggestedTechs, setSuggestedTechs] = useState<Technician[]>([]);
+  const [depositBooking, setDepositBooking] = useState<Booking | null>(null);
+
+  useEffect(() => {
+    setSlotConflict(false);
+    setSuggestedTechs([]);
+  }, [selectedDate, selectedTimeSlot, technician?.id]);
 
   useEffect(() => {
     if (!isOpen || !user) return;
@@ -89,6 +101,19 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     e.preventDefault();
     if (!customerAddress.trim() || !customerPhone.trim()) {
       error('Vui lòng điền đầy đủ địa chỉ và số điện thoại liên hệ');
+      return;
+    }
+
+    // Double-booking guard: this technician already has a live booking in the same slot.
+    if (storageService.hasSlotConflict(technician.id, selectedDate, selectedTimeSlot)) {
+      const alternatives = storageService.getTechnicians().filter(
+        t => t.id !== technician.id &&
+          t.city === technician.city &&
+          t.categories.some(c => technician.categories.includes(c)) &&
+          !storageService.hasSlotConflict(t.id, selectedDate, selectedTimeSlot)
+      ).slice(0, 3);
+      setSuggestedTechs(alternatives);
+      setSlotConflict(true);
       return;
     }
 
@@ -127,18 +152,32 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         warrantyMonths: 6,
         status: 'pending',
         createdAt: new Date().toISOString(),
+        ...(paymentMethod === 'escrow'
+          ? {
+              depositAmount: DEPOSIT_AMOUNT,
+              depositPaid: false,
+              holdExpiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+            }
+          : {
+              depositPaid: true,
+              techResponseDeadline: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+            }),
       };
 
       storageService.addBooking(newBooking);
       setIsSubmitting(false);
-      success(
-        'Đặt lịch thành công! Đơn đang ở trạng thái "Chờ tiếp nhận".',
-        paymentMethod === 'escrow'
-          ? 'Tiền cọc được FixNear Escrow tạm giữ an toàn. Thợ sẽ liên hệ bạn ngay.'
-          : 'Thợ sẽ liên hệ xác nhận trong vòng 10-15 phút.'
-      );
-      onClose();
-      navigate(`/my-bookings/${newBooking.id}`);
+
+      if (paymentMethod === 'escrow') {
+        // Hold the slot and require the QR deposit before the booking is finalized.
+        setDepositBooking(newBooking);
+      } else {
+        success(
+          'Đặt lịch thành công! Đơn đang ở trạng thái "Chờ tiếp nhận".',
+          'Thợ sẽ liên hệ xác nhận trong vòng 10-15 phút.'
+        );
+        onClose();
+        navigate(`/my-bookings/${newBooking.id}`);
+      }
     }, 600);
   };
 
@@ -389,6 +428,44 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           </div>
         </div>
 
+        {/* Slot Conflict Warning */}
+        {slotConflict && (
+          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl space-y-2.5">
+            <p className="flex items-center gap-1.5 font-bold text-rose-700">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Khung giờ này vừa có người đặt
+            </p>
+            <p className="text-slate-600">
+              Vui lòng chọn khung giờ khác, hoặc đặt lịch với một trong các thợ lân cận đang rảnh dưới đây:
+            </p>
+            {suggestedTechs.length > 0 && (
+              <div className="grid grid-cols-1 gap-1.5">
+                {suggestedTechs.map(t => (
+                  <div key={t.id} className="flex items-center justify-between gap-2 p-2 bg-white rounded-xl border border-rose-100">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Avatar src={t.avatar} name={t.name} size="sm" />
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-800 truncate">{t.name}</p>
+                        <p className="text-[10px] text-slate-500">★ {t.rating} • ~{t.distanceKm}km</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        navigate(`/technicians/${t.id}`);
+                      }}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700 shrink-0"
+                    >
+                      Xem hồ sơ
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Buttons */}
         <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
           <Button type="button" variant="outline" size="sm" onClick={onClose}>
@@ -405,6 +482,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         </div>
 
       </form>
+
+      {/* QR Deposit + 10-Minute Hold Countdown */}
+      <DepositModal
+        isOpen={!!depositBooking}
+        booking={depositBooking}
+        onConfirmed={() => {
+          const confirmedId = depositBooking?.id;
+          setDepositBooking(null);
+          onClose();
+          if (confirmedId) navigate(`/my-bookings/${confirmedId}`);
+        }}
+        onExpired={() => {
+          setDepositBooking(null);
+          onClose();
+        }}
+      />
     </Modal>
   );
 };

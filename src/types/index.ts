@@ -214,6 +214,15 @@ export interface Booking {
   quotedAt?: string;
   paidAt?: string;
   completedAt?: string;
+  // Deposit / hold-slot escrow (see storageService for the 10-minute hold logic)
+  depositAmount?: number;
+  depositPaid?: boolean;
+  holdExpiresAt?: string;
+  // Technician response window before an unaccepted booking auto-reassigns
+  techResponseDeadline?: string;
+  reassignedCount?: number;
+  // Fixed inspection fee kept from the deposit when the customer rejects the survey quote
+  inspectionFee?: number;
 }
 
 export interface WarrantyClaim {

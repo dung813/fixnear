@@ -190,6 +190,105 @@ export const storageService = {
     list.unshift(booking);
     setItem(STORAGE_KEYS.BOOKINGS, list);
   },
+
+  // A technician is "busy" for a slot if they already have a live (non-cancelled)
+  // booking on the same date + time slot. Used to catch double-booking at creation time.
+  hasSlotConflict(technicianId: string, date: string, timeSlot: string, excludeBookingId?: string): boolean {
+    return this.getBookings().some(
+      b => b.technicianId === technicianId &&
+        b.date === date &&
+        b.timeSlot === timeSlot &&
+        b.status !== 'cancelled' &&
+        b.id !== excludeBookingId
+    );
+  },
+
+  // Customer confirms the QR deposit within the 10-minute hold window: the slot
+  // is locked in and the technician's phone number becomes visible to the customer.
+  confirmDeposit(bookingId: string): void {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        depositPaid: true,
+        holdExpiresAt: undefined,
+        techResponseDeadline: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      };
+      setItem(STORAGE_KEYS.BOOKINGS, list);
+    }
+  },
+
+  // Called when the 10-minute deposit countdown runs out without payment.
+  expireUnpaidHold(bookingId: string): void {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    if (idx !== -1 && list[idx].status === 'pending' && !list[idx].depositPaid) {
+      list[idx] = { ...list[idx], status: 'cancelled' };
+      setItem(STORAGE_KEYS.BOOKINGS, list);
+    }
+  },
+
+  // Technician didn't accept within the 5-minute response window after deposit:
+  // auto-reassign to the next available technician in the same category/city.
+  reassignTechnician(bookingId: string, nextTech: Technician): void {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    if (idx !== -1) {
+      const current = list[idx];
+      list[idx] = {
+        ...current,
+        technicianId: nextTech.id,
+        technicianName: nextTech.name,
+        technicianAvatar: nextTech.avatar,
+        technicianPhone: nextTech.phone,
+        technicianTitle: nextTech.title,
+        techResponseDeadline: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        reassignedCount: (current.reassignedCount || 0) + 1,
+      };
+      setItem(STORAGE_KEYS.BOOKINGS, list);
+    }
+  },
+
+  // Technician cancels a job they had already accepted: full deposit refund to the
+  // customer, the booking is reopened to find a new technician, and the technician
+  // who bailed takes a small trust-score hit (their completionRate is docked).
+  technicianCancelAccepted(bookingId: string): void {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    if (idx === -1) return;
+    const current = list[idx];
+    list[idx] = {
+      ...current,
+      status: 'pending',
+      paymentStatus: 'refunded',
+      techResponseDeadline: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    };
+    setItem(STORAGE_KEYS.BOOKINGS, list);
+
+    const tech = this.getTechnicianById(current.technicianId);
+    if (tech) {
+      this.updateTechnician(tech.id, { completionRate: Math.max(0, (tech.completionRate || 100) - 5) });
+    }
+  },
+
+  // Customer rejects the survey quote outright (not asking for a re-quote): a fixed
+  // inspection fee is kept from the deposit and the remainder is refunded, order cancelled.
+  rejectQuotationWithFee(bookingId: string, inspectionFee: number): void {
+    const list = this.getBookings();
+    const idx = list.findIndex(b => b.id === bookingId);
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        status: 'cancelled',
+        paymentStatus: 'refunded',
+        inspectionFee,
+        finalPrice: inspectionFee,
+      };
+      setItem(STORAGE_KEYS.BOOKINGS, list);
+    }
+  },
+
   updateBookingStatus(id: string, status: Booking['status'], extra?: { finalPrice?: number; paymentStatus?: Booking['paymentStatus'] }): void {
     const list = this.getBookings();
     const idx = list.findIndex(b => b.id === id);

@@ -13,7 +13,10 @@ export interface QuotationModalProps {
   booking: Booking | null;
   onApproved?: () => void;
   onRejected?: () => void;
+  onCancelled?: () => void;
 }
+
+const INSPECTION_FEE = 50000;
 
 export const QuotationModal: React.FC<QuotationModalProps> = ({
   isOpen,
@@ -21,6 +24,7 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
   booking,
   onApproved,
   onRejected,
+  onCancelled,
 }) => {
   const { success, error } = useNotification();
   const [isRejecting, setIsRejecting] = useState(false);
@@ -56,6 +60,22 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
       success('Đã gửi yêu cầu giải trình', 'Thợ sẽ liên hệ giải thích và gửi lại báo giá mới.');
       onClose();
       onRejected?.();
+    }, 500);
+  };
+
+  // Customer declines the survey quote outright instead of asking for a re-quote:
+  // a fixed inspection fee is kept from the deposit, the rest is refunded, order cancelled.
+  const handleCancelWithFee = () => {
+    setIsSubmitting(true);
+    setTimeout(() => {
+      storageService.rejectQuotationWithFee(booking.id, INSPECTION_FEE);
+      setIsSubmitting(false);
+      success(
+        'Đã hủy đơn hàng',
+        `Phí kiểm tra ${formatCurrency(INSPECTION_FEE)} được trừ vào cọc, phần còn lại đã hoàn về tài khoản của bạn.`
+      );
+      onClose();
+      onCancelled?.();
     }, 500);
   };
 
@@ -174,6 +194,19 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
               >
                 Gửi yêu cầu giải trình
               </Button>
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              <p className="text-[11px] text-slate-400 italic">
+                Không muốn tiếp tục sửa chữa nữa?
+              </p>
+              <button
+                type="button"
+                onClick={handleCancelWithFee}
+                disabled={isSubmitting}
+                className="text-[11px] font-bold text-rose-600 hover:text-rose-700 underline decoration-dotted shrink-0"
+              >
+                Hủy đơn (giữ phí kiểm tra {formatCurrency(INSPECTION_FEE)})
+              </button>
             </div>
           </div>
         ) : (

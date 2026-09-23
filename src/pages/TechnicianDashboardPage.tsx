@@ -44,6 +44,26 @@ import {
 type TabKey = 'radar' | 'schedule' | 'services' | 'earnings' | 'reviews' | 'profile';
 type ScheduleFilter = 'today' | 'tomorrow' | 'upcoming' | 'all';
 
+// Small ticking badge showing time left before an unaccepted booking auto-reassigns.
+const ResponseCountdown: React.FC<{ deadline: string }> = ({ deadline }) => {
+  const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.round((new Date(deadline).getTime() - Date.now()) / 1000)));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsLeft(Math.max(0, Math.round((new Date(deadline).getTime() - Date.now()) / 1000)));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  const m = Math.floor(secondsLeft / 60);
+  const s = secondsLeft % 60;
+  return (
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${secondsLeft <= 60 ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-700'}`}>
+      Tự động chuyển thợ khác sau: {m}:{s.toString().padStart(2, '0')}
+    </span>
+  );
+};
+
 const pathToTab = (pathname: string): TabKey => {
   if (pathname === '/technician/schedule') return 'schedule';
   if (pathname === '/technician/services') return 'services';
@@ -230,6 +250,60 @@ export const TechnicianDashboardPage: React.FC = () => {
       newStatus === 'in_progress' ? 'Đang tiến hành sửa chữa' : 'Đã cập nhật';
     success(`Cập nhật tiến độ: ${statusLabel}`);
   };
+
+  // Pick another technician in the same category/city with no conflicting slot,
+  // used both for an explicit decline and for the 5-minute auto-reassign timeout.
+  const findNextTechnicianFor = (bk: Booking): Technician | undefined => {
+    return storageService.getTechnicians().find(
+      t => t.id !== bk.technicianId &&
+        t.city === bk.city &&
+        t.categories.includes(bk.categoryId) &&
+        !storageService.hasSlotConflict(t.id, bk.date, bk.timeSlot)
+    );
+  };
+
+  const handleDeclineBooking = (bk: Booking) => {
+    const nextTech = findNextTechnicianFor(bk);
+    if (nextTech) {
+      storageService.reassignTechnician(bk.id, nextTech);
+      success('Đã từ chối nhận đơn', `Yêu cầu được tự động chuyển sang thợ ${nextTech.name}.`);
+    } else {
+      storageService.updateBookingStatus(bk.id, 'cancelled');
+      success('Đã từ chối nhận đơn', 'Hiện chưa tìm được thợ thay thế phù hợp, đơn đã được hủy.');
+    }
+    loadData();
+  };
+
+  const handleTechnicianCancelAccepted = (bk: Booking) => {
+    storageService.technicianCancelAccepted(bk.id);
+    const nextTech = findNextTechnicianFor(bk);
+    if (nextTech) {
+      storageService.reassignTechnician(bk.id, nextTech);
+    }
+    success(
+      'Đã hủy nhận việc',
+      'Khách đã được hoàn 100% tiền cọc. Đơn được ưu tiên đẩy cho thợ khác. Lưu ý: điểm uy tín của bạn đã bị trừ do hủy việc sau khi nhận.'
+    );
+    loadData();
+  };
+
+  // Auto-reassign any booking this tech hasn't accepted within 5 minutes of deposit.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      bookings
+        .filter(b => b.status === 'pending' && b.techResponseDeadline && new Date(b.techResponseDeadline).getTime() <= now)
+        .forEach(b => {
+          const nextTech = findNextTechnicianFor(b);
+          if (nextTech) {
+            storageService.reassignTechnician(b.id, nextTech);
+          } else {
+            storageService.updateBookingStatus(b.id, 'cancelled');
+          }
+        });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [bookings]);
 
   const visibleRequests = requests.filter(r => !rejectedRequestIds.includes(r.id));
 
@@ -533,6 +607,9 @@ export const TechnicianDashboardPage: React.FC = () => {
                             : bk.status === 'cancelled' ? 'Đã hủy'
                             : 'Đã hoàn thành'}
                         </Badge>
+                        {bk.status === 'pending' && bk.techResponseDeadline && (
+                          <ResponseCountdown deadline={bk.techResponseDeadline} />
+                        )}
                       </div>
                     </div>
 
@@ -600,19 +677,37 @@ export const TechnicianDashboardPage: React.FC = () => {
                           </button>
                         )}
                         {bk.status === 'pending' && (
-                          <Button size="sm" onClick={() => handleUpdateStatus(bk.id, 'accepted')}>
-                            Xác nhận nhận đơn
-                          </Button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDeclineBooking(bk)}
+                              className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                            >
+                              Từ chối
+                            </button>
+                            <Button size="sm" onClick={() => handleUpdateStatus(bk.id, 'accepted')}>
+                              Xác nhận nhận đơn
+                            </Button>
+                          </>
                         )}
                         {bk.status === 'accepted' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            leftIcon={<Truck className="w-3.5 h-3.5" />}
-                            onClick={() => handleUpdateStatus(bk.id, 'en_route')}
-                          >
-                            Bắt đầu di chuyển
-                          </Button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleTechnicianCancelAccepted(bk)}
+                              className="px-3 py-1.5 rounded-xl border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+                            >
+                              Hủy nhận việc
+                            </button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              leftIcon={<Truck className="w-3.5 h-3.5" />}
+                              onClick={() => handleUpdateStatus(bk.id, 'en_route')}
+                            >
+                              Bắt đầu di chuyển
+                            </Button>
+                          </>
                         )}
                         {bk.status === 'en_route' && (
                           <Button

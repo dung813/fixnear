@@ -187,13 +187,22 @@ export const MyBookingsPage: React.FC = () => {
               {/* Action Buttons */}
               <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <a
-                    href={`tel:${role === 'technician' ? bk.customerPhone : bk.technicianPhone}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                    Gọi {role === 'technician' ? bk.customerPhone : bk.technicianPhone}
-                  </a>
+                  {role === 'customer' && bk.paymentMethod === 'escrow' && !bk.depositPaid && bk.status === 'pending' ? (
+                    <Link
+                      to={`/my-bookings/${bk.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-xs font-bold text-amber-700 hover:bg-amber-100 transition"
+                    >
+                      Đặt cọc để xem SĐT thợ
+                    </Link>
+                  ) : (
+                    <a
+                      href={`tel:${role === 'technician' ? bk.customerPhone : bk.technicianPhone}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                      Gọi {role === 'technician' ? bk.customerPhone : bk.technicianPhone}
+                    </a>
+                  )}
                   {role === 'customer' ? (
                     <button
                       type="button"

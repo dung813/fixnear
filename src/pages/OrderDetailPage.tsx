@@ -9,6 +9,7 @@ import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { QuotationModal } from '../components/orders/QuotationModal';
 import { PaymentModal } from '../components/orders/PaymentModal';
+import { DepositModal } from '../components/orders/DepositModal';
 import { ReviewModal } from '../components/technicians/ReviewModal';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import {
@@ -25,7 +26,8 @@ import {
   ClipboardCheck,
   CalendarCheck,
   FileCheck,
-  Wallet
+  Wallet,
+  QrCode
 } from 'lucide-react';
 
 const STEPS = [
@@ -81,6 +83,7 @@ export const OrderDetailPage: React.FC = () => {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [quotationOpen, setQuotationOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [depositOpen, setDepositOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [hasAutoOpenedReview, setHasAutoOpenedReview] = useState(false);
 
@@ -120,6 +123,7 @@ export const OrderDetailPage: React.FC = () => {
 
   const stepIndex = getStepIndex(booking.status);
   const isCancelled = booking.status === 'cancelled';
+  const awaitingDeposit = booking.paymentMethod === 'escrow' && !booking.depositPaid && booking.status === 'pending';
 
   const handleCancel = () => {
     if (!window.confirm('Bạn có chắc muốn hủy đơn hàng này không?')) return;
@@ -253,9 +257,16 @@ export const OrderDetailPage: React.FC = () => {
       )}
 
       {isCancelled && (
-        <div className="bg-rose-50 border border-rose-100 rounded-3xl p-6 flex items-center gap-3 text-rose-700 text-sm font-semibold">
-          <AlertTriangle className="w-5 h-5" />
-          Đơn hàng này đã bị hủy.
+        <div className="bg-rose-50 border border-rose-100 rounded-3xl p-6 space-y-1.5">
+          <div className="flex items-center gap-3 text-rose-700 text-sm font-semibold">
+            <AlertTriangle className="w-5 h-5" />
+            Đơn hàng này đã bị hủy.
+          </div>
+          {typeof booking.inspectionFee === 'number' && (
+            <p className="text-xs text-rose-600 pl-8">
+              Đã giữ phí kiểm tra {formatCurrency(booking.inspectionFee)} từ tiền cọc, phần còn lại đã được hoàn.
+            </p>
+          )}
         </div>
       )}
 
@@ -273,23 +284,35 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-          <a
-            href={`tel:${booking.technicianPhone}`}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
-          >
-            <Phone className="w-4 h-4 text-emerald-600" />
-            Gọi ngay: {booking.technicianPhone}
-          </a>
-          <button
-            type="button"
-            onClick={handleChat}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
-          >
-            <MessageSquare className="w-4 h-4 text-blue-600" />
-            Nhắn tin trao đổi
-          </button>
-        </div>
+        {awaitingDeposit ? (
+          <div className="p-3.5 bg-amber-50 border border-amber-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-amber-800 font-semibold">
+              <Lock className="w-4 h-4 shrink-0" />
+              Đặt cọc để chốt lịch và xem số điện thoại của thợ.
+            </div>
+            <Button size="sm" onClick={() => setDepositOpen(true)} leftIcon={<QrCode className="w-3.5 h-3.5" />} className="font-bold shrink-0">
+              Đặt cọc ngay
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+            <a
+              href={`tel:${booking.technicianPhone}`}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+            >
+              <Phone className="w-4 h-4 text-emerald-600" />
+              Gọi ngay: {booking.technicianPhone}
+            </a>
+            <button
+              type="button"
+              onClick={handleChat}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+            >
+              <MessageSquare className="w-4 h-4 text-blue-600" />
+              Nhắn tin trao đổi
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Order Info */}
@@ -375,6 +398,7 @@ export const OrderDetailPage: React.FC = () => {
         onClose={() => setQuotationOpen(false)}
         booking={booking}
         onApproved={() => setPaymentOpen(true)}
+        onCancelled={loadBooking}
       />
 
       {/* Payment Gateway Modal */}
@@ -382,6 +406,14 @@ export const OrderDetailPage: React.FC = () => {
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
         booking={booking}
+      />
+
+      {/* QR Deposit + 10-Minute Hold Countdown (re-openable if the visitor navigated away) */}
+      <DepositModal
+        isOpen={depositOpen}
+        booking={booking}
+        onConfirmed={() => setDepositOpen(false)}
+        onExpired={() => setDepositOpen(false)}
       />
 
       {/* Review Modal (auto-opens once when order completes) */}
