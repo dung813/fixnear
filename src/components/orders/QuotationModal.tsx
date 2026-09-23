@@ -5,7 +5,7 @@ import { useNotification } from '../../context/NotificationContext';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { formatCurrency } from '../../utils/formatters';
-import { AlertTriangle, CheckCircle2, ImageIcon, Wrench } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ImageIcon, Wrench, ShieldCheck } from 'lucide-react';
 
 export interface QuotationModalProps {
   isOpen: boolean;
@@ -33,6 +33,9 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
 
   if (!booking || !booking.quotation) return null;
   const q = booking.quotation;
+  // A pre-work "báo giá thực tế" (sent right after survey, before repair starts)
+  // vs. the post-work final settlement quote — the approve/reject copy differs.
+  const isEstimatePhase = booking.quoteApprovalTarget === 'in_progress';
 
   const partsTotal = q.parts.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0);
   const extraTotal = q.extraCharges.reduce((sum, e) => sum + e.amount, 0);
@@ -42,7 +45,10 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
     setTimeout(() => {
       storageService.respondToQuotation(booking.id, true);
       setIsSubmitting(false);
-      success('Đã duyệt báo giá!', 'Đơn hàng chuyển sang bước thanh toán.');
+      success(
+        'Đã duyệt báo giá!',
+        isEstimatePhase ? 'Thợ sẽ bắt đầu tiến hành sửa chữa.' : 'Đơn hàng chuyển sang bước thanh toán.'
+      );
       onClose();
       onApproved?.();
     }, 500);
@@ -83,7 +89,7 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Báo giá chi tiết chờ duyệt"
+      title={isEstimatePhase ? 'Phiếu báo giá thực tế - Chờ bạn duyệt' : 'Báo giá chi tiết chờ duyệt'}
       description={`Đơn ${booking.id} - ${booking.serviceName}`}
       maxWidth="lg"
     >
@@ -94,6 +100,14 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
             <Wrench className="w-4 h-4 text-blue-600" /> Tiền công cơ bản
           </span>
           <span className="font-bold text-slate-900">{formatCurrency(q.laborCost)}</span>
+        </div>
+
+        {/* Warranty */}
+        <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+          <span className="font-semibold text-emerald-800 flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" /> Bảo hành cam kết
+          </span>
+          <span className="font-bold text-emerald-700">{booking.warrantyMonths} tháng</span>
         </div>
 
         {/* Parts table */}
@@ -169,7 +183,29 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
         </div>
 
         {/* Reject feedback form */}
-        {isRejecting ? (
+        {isEstimatePhase ? (
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              isLoading={isSubmitting}
+              onClick={handleCancelWithFee}
+              className="text-rose-600 border-rose-200 hover:bg-rose-50"
+            >
+              Từ chối (Chỉ trả phí kiểm tra {formatCurrency(INSPECTION_FEE)})
+            </Button>
+            <Button
+              type="button"
+              variant="success"
+              isLoading={isSubmitting}
+              onClick={handleApprove}
+              leftIcon={<CheckCircle2 className="w-4 h-4" />}
+              className="font-bold"
+            >
+              Đồng ý báo giá & Bắt đầu sửa
+            </Button>
+          </div>
+        ) : isRejecting ? (
           <div className="space-y-2 pt-2 border-t border-slate-100">
             <label className="block font-bold text-slate-700 uppercase tracking-wider">
               Lý do từ chối / Yêu cầu giải trình *

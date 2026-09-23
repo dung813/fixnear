@@ -15,6 +15,7 @@ import { ServicesPricingEditor } from '../components/technicians/ServicesPricing
 import { KycVerificationPanel } from '../components/technicians/KycVerificationPanel';
 import { EarningsPanel } from '../components/technicians/EarningsPanel';
 import { TechnicianQuotationModal } from '../components/technicians/TechnicianQuotationModal';
+import { CreateQuotationModal } from '../components/technicians/CreateQuotationModal';
 import { formatCurrency, formatDate, formatRelativeTime } from '../utils/formatters';
 import { Modal } from '../components/common/Modal';
 import {
@@ -98,6 +99,7 @@ export const TechnicianDashboardPage: React.FC = () => {
   const [rejectedRequestIds, setRejectedRequestIds] = useState<string[]>([]);
 
   const [quotationBooking, setQuotationBooking] = useState<Booking | null>(null);
+  const [createQuotationBooking, setCreateQuotationBooking] = useState<Booking | null>(null);
   const [confirmAcceptRequest, setConfirmAcceptRequest] = useState<ServiceRequest | null>(null);
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
   const [surchargeAmount, setSurchargeAmount] = useState('');
@@ -720,14 +722,24 @@ export const TechnicianDashboardPage: React.FC = () => {
                           </Button>
                         )}
                         {bk.status === 'surveying' && (
-                          <Button
-                            size="sm"
-                            variant="success"
-                            leftIcon={<Wrench className="w-3.5 h-3.5" />}
-                            onClick={() => handleUpdateStatus(bk.id, 'in_progress')}
-                          >
-                            Bắt đầu sửa chữa
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                              leftIcon={<FileCheck className="w-3.5 h-3.5" />}
+                              onClick={() => setCreateQuotationBooking(bk)}
+                            >
+                              Tạo báo giá thực tế
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="success"
+                              leftIcon={<Wrench className="w-3.5 h-3.5" />}
+                              onClick={() => handleUpdateStatus(bk.id, 'in_progress')}
+                            >
+                              Bắt đầu sửa chữa
+                            </Button>
+                          </>
                         )}
                         {bk.status === 'in_progress' && (
                           <Button
@@ -833,6 +845,14 @@ export const TechnicianDashboardPage: React.FC = () => {
         onSuccess={loadData}
       />
 
+      {/* Pre-work "Báo giá thực tế" Modal */}
+      <CreateQuotationModal
+        isOpen={!!createQuotationBooking}
+        onClose={() => setCreateQuotationBooking(null)}
+        booking={createQuotationBooking}
+        onSuccess={loadData}
+      />
+
       {/* Accept-Job Confirmation Modal */}
       <Modal
         isOpen={!!confirmAcceptRequest}
@@ -924,9 +944,22 @@ export const TechnicianDashboardPage: React.FC = () => {
                 </Button>
               )}
               {detailBooking.status === 'surveying' && (
-                <Button size="sm" variant="success" leftIcon={<Search className="w-3.5 h-3.5" />} onClick={() => handleUpdateStatus(detailBooking.id, 'in_progress')}>
-                  Bắt đầu kiểm tra / sửa chữa
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                    leftIcon={<FileCheck className="w-3.5 h-3.5" />}
+                    onClick={() => {
+                      setCreateQuotationBooking(detailBooking);
+                      setDetailBooking(null);
+                    }}
+                  >
+                    Tạo báo giá thực tế
+                  </Button>
+                  <Button size="sm" variant="success" leftIcon={<Search className="w-3.5 h-3.5" />} onClick={() => handleUpdateStatus(detailBooking.id, 'in_progress')}>
+                    Bắt đầu kiểm tra / sửa chữa
+                  </Button>
+                </div>
               )}
               {detailBooking.status === 'in_progress' && (
                 <Button

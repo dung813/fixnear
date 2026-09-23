@@ -206,6 +206,10 @@ export interface Booking {
   warrantyMonths: number;
   status: BookingStatus;
   quotation?: Quotation;
+  // Which status approving the current quotation should move the booking to:
+  // 'in_progress' for a pre-work estimate (khách duyệt giá rồi thợ mới sửa),
+  // 'payment_pending' (the default) for the post-work final settlement quote.
+  quoteApprovalTarget?: 'in_progress' | 'payment_pending';
   finalPaymentMethod?: FinalPaymentMethod;
   invoiceId?: string;
   completionPhotos?: string[];

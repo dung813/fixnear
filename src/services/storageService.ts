@@ -346,7 +346,7 @@ export const storageService = {
   submitQuotation(
     bookingId: string,
     quotation: Omit<Quotation, 'status' | 'createdAt'>,
-    extra?: { completionPhotos?: string[]; warrantyMonths?: number }
+    extra?: { completionPhotos?: string[]; warrantyMonths?: number; approvalTarget?: Booking['quoteApprovalTarget'] }
   ): void {
     const list = this.getBookings();
     const idx = list.findIndex(b => b.id === bookingId);
@@ -356,6 +356,7 @@ export const storageService = {
         status: 'quote_pending',
         quotation: { ...quotation, status: 'pending', createdAt: new Date().toISOString() },
         quotedAt: new Date().toISOString(),
+        quoteApprovalTarget: extra?.approvalTarget || 'payment_pending',
         ...(extra?.completionPhotos ? { completionPhotos: extra.completionPhotos } : {}),
         ...(extra?.warrantyMonths ? { warrantyMonths: extra.warrantyMonths } : {}),
       };
@@ -366,9 +367,10 @@ export const storageService = {
     const list = this.getBookings();
     const idx = list.findIndex(b => b.id === bookingId);
     if (idx !== -1 && list[idx].quotation) {
+      const approvedStatus = list[idx].quoteApprovalTarget || 'payment_pending';
       list[idx] = {
         ...list[idx],
-        status: approve ? 'payment_pending' : 'quote_pending',
+        status: approve ? approvedStatus : 'quote_pending',
         quotation: {
           ...list[idx].quotation!,
           status: approve ? 'approved' : 'rejected',
