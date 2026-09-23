@@ -213,6 +213,7 @@ export interface Booking {
   finalPaymentMethod?: FinalPaymentMethod;
   invoiceId?: string;
   completionPhotos?: string[];
+  photos?: string[]; // customer-attached photos/videos of the issue, from the booking form
   createdAt: string;
   enRouteAt?: string;
   surveyAt?: string;

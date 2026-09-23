@@ -12,6 +12,8 @@ export interface DepositModalProps {
   booking: Booking | null;
   onConfirmed: () => void;
   onExpired: () => void;
+  successTitle?: string;
+  successMessage?: string;
 }
 
 const HOLD_SECONDS = 10 * 60;
@@ -26,7 +28,14 @@ const formatCountdown = (totalSeconds: number): string => {
 // only locked in — and the technician's phone revealed — once this is confirmed.
 // If the 10-minute hold expires unpaid, the booking is auto-cancelled and the
 // slot is released back for other customers.
-export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, booking, onConfirmed, onExpired }) => {
+export const DepositModal: React.FC<DepositModalProps> = ({
+  isOpen,
+  booking,
+  onConfirmed,
+  onExpired,
+  successTitle,
+  successMessage,
+}) => {
   const { success, info } = useNotification();
   const [secondsLeft, setSecondsLeft] = useState(HOLD_SECONDS);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -62,7 +71,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, booking, onC
     setTimeout(() => {
       storageService.confirmDeposit(booking.id);
       setIsConfirming(false);
-      success('Đặt cọc thành công!', 'Đơn đã được chốt lịch. Số điện thoại của thợ đã hiển thị.');
+      success(
+        successTitle || 'Đặt cọc thành công!',
+        successMessage || 'Đơn đã được chốt lịch. Số điện thoại của thợ đã hiển thị.'
+      );
       onConfirmed();
     }, 800);
   };
