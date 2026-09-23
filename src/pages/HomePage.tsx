@@ -105,7 +105,7 @@ export const HomePage: React.FC = () => {
             FixNear – Sửa chữa tại nhà
             <br />
             <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-blue-200 bg-clip-text text-transparent">
-              Nhanh chóng &amp; Uy tín
+              Nhanh chóng và Uy tín
             </span>
           </h1>
 
@@ -141,7 +141,7 @@ export const HomePage: React.FC = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                  placeholder="Nhập vấn đề cần sửa (ví dụ: Điều hòa, Máy giặt, Khóa...)"
+                  placeholder="Tìm dịch vụ hoặc lỗi cần sửa (Ví dụ: Điều hòa, Khóa...)"
                   className="w-full bg-transparent text-sm placeholder-slate-400 focus:outline-none font-medium"
                 />
               </div>
