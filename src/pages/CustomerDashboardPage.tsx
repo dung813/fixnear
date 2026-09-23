@@ -10,26 +10,32 @@ import { ReviewModal } from '../components/technicians/ReviewModal';
 import { DisputeModal } from '../components/technicians/DisputeModal';
 import { SmartMatchingModal } from '../components/requests/SmartMatchingModal';
 import { CreateRequestModal } from '../components/requests/CreateRequestModal';
+import { QuotationModal } from '../components/orders/QuotationModal';
 import { AddressBook } from '../components/account/AddressBook';
 import { Avatar } from '../components/common/Avatar';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
+import { Modal } from '../components/common/Modal';
 import { formatCurrency, formatDate, formatRelativeTime } from '../utils/formatters';
-import { 
-  ClipboardList, 
-  CalendarCheck, 
-  CheckCircle2, 
-  Star, 
-  PlusCircle, 
-  Clock, 
-  MapPin, 
-  MessageSquare, 
-  Phone, 
+import {
+  ClipboardList,
+  CalendarCheck,
+  CheckCircle2,
+  Star,
+  PlusCircle,
+  Clock,
+  MapPin,
+  MessageSquare,
+  Phone,
   ShieldCheck,
   Lock,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  Pencil,
+  XCircle,
+  History,
+  FileCheck
 } from 'lucide-react';
 
 export const CustomerDashboardPage: React.FC = () => {
@@ -42,11 +48,14 @@ export const CustomerDashboardPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [allTechs, setAllTechs] = useState<Technician[]>([]);
-  
+
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null);
   const [selectedBookingForDispute, setSelectedBookingForDispute] = useState<Booking | null>(null);
   const [matchingRequest, setMatchingRequest] = useState<ServiceRequest | null>(null);
   const [createRequestOpen, setCreateRequestOpen] = useState(false);
+  const [editRequestTarget, setEditRequestTarget] = useState<ServiceRequest | null>(null);
+  const [cancelRequestTarget, setCancelRequestTarget] = useState<ServiceRequest | null>(null);
+  const [quotationBooking, setQuotationBooking] = useState<Booking | null>(null);
 
   // Profile Edit State
   const [name, setName] = useState(user?.name || '');
@@ -75,6 +84,16 @@ export const CustomerDashboardPage: React.FC = () => {
   const activeRequestsCount = requests.filter((r: ServiceRequest) => r.status === 'open' || r.status === 'assigned').length;
   const pendingBookingsCount = bookings.filter((b: Booking) => b.status === 'pending' || b.status === 'accepted' || b.status === 'surveying' || b.status === 'in_progress').length;
   const completedBookingsCount = bookings.filter((b: Booking) => b.status === 'completed' || b.status === 'reviewed').length;
+
+  const activeBookings = bookings.filter((b: Booking) => b.status !== 'completed' && b.status !== 'reviewed');
+  const historyBookings = bookings.filter((b: Booking) => b.status === 'completed' || b.status === 'reviewed');
+
+  const handleConfirmCancelRequest = () => {
+    if (!cancelRequestTarget) return;
+    storageService.updateRequest(cancelRequestTarget.id, { status: 'cancelled' });
+    setCancelRequestTarget(null);
+    loadData();
+  };
 
   const handleUpdateProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,7 +214,18 @@ export const CustomerDashboardPage: React.FC = () => {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Lịch sửa chữa ({bookings.length})
+              Lịch sửa chữa ({activeBookings.length})
+            </button>
+
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`pb-3 transition relative ${
+                activeTab === 'history'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Lịch sử & Bảo hành ({historyBookings.length})
             </button>
 
             <button
@@ -248,11 +278,15 @@ export const CustomerDashboardPage: React.FC = () => {
                         </div>
 
                         <Badge
-                          variant={req.status === 'open' ? 'success' : req.status === 'completed' ? 'primary' : 'warning'}
+                          variant={
+                            req.status === 'cancelled' ? 'danger' :
+                            req.status === 'open' ? 'success' :
+                            req.status === 'completed' ? 'primary' : 'warning'
+                          }
                           size="md"
                           dot
                         >
-                          {req.status === 'open' ? 'Đang tìm thợ' : req.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}
+                          {req.status === 'cancelled' ? 'Đã hủy' : req.status === 'open' ? 'Đang tìm thợ' : req.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}
                         </Badge>
                       </div>
 
@@ -266,23 +300,43 @@ export const CustomerDashboardPage: React.FC = () => {
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <Link to="/chat">
+                          <Button size="sm" variant="outline" className="text-xs">
+                            Xem tin nhắn báo giá ({req.offersCount || 2})
+                          </Button>
+                        </Link>
+                      </div>
+
+                      {req.status === 'open' && (
+                        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
                           <Button
                             size="sm"
-                            variant="secondary"
                             onClick={() => setMatchingRequest(req)}
-                            className="bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 font-bold text-xs"
-                            leftIcon={<Sparkles className="w-3.5 h-3.5 text-amber-500" />}
+                            className="font-bold text-xs"
+                            leftIcon={<Sparkles className="w-3.5 h-3.5" />}
                           >
-                            AI Matching Thợ
+                            Xem danh sách thợ đề xuất (3 thợ)
                           </Button>
-                          <Link to="/chat">
-                            <Button size="sm" variant="outline" className="text-xs">
-                              Xem tin nhắn báo giá ({req.offersCount || 2})
-                            </Button>
-                          </Link>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                            leftIcon={<Pencil className="w-3.5 h-3.5" />}
+                            onClick={() => setEditRequestTarget(req)}
+                          >
+                            Chỉnh sửa yêu cầu
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                            leftIcon={<XCircle className="w-3.5 h-3.5" />}
+                            onClick={() => setCancelRequestTarget(req)}
+                          >
+                            Hủy đơn
+                          </Button>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -306,9 +360,9 @@ export const CustomerDashboardPage: React.FC = () => {
                 </h3>
               </div>
 
-              {bookings.length > 0 ? (
+              {activeBookings.length > 0 ? (
                 <div className="space-y-5">
-                  {bookings.map((bk: Booking) => {
+                  {activeBookings.map((bk: Booking) => {
                     const stepNum = getStepProgress(bk.status);
 
                     return (
@@ -365,7 +419,7 @@ export const CustomerDashboardPage: React.FC = () => {
                                 : bk.status === 'in_progress'
                                 ? '4. Đang thi công'
                                 : bk.status === 'quote_pending'
-                                ? 'Chờ duyệt báo giá'
+                                ? 'Thợ đã gửi báo giá - Cần bạn duyệt'
                                 : bk.status === 'payment_pending'
                                 ? 'Chờ thanh toán'
                                 : bk.status === 'completed'
@@ -461,15 +515,22 @@ export const CustomerDashboardPage: React.FC = () => {
                                 Nghiệm thu & Viết đánh giá
                               </Button>
                             )}
-                            <Link to={`/my-bookings/${bk.id}`}>
-                              <Button size="sm" variant="outline" className="text-xs">
-                                {bk.status === 'quote_pending'
-                                  ? 'Xem báo giá'
-                                  : bk.status === 'payment_pending'
-                                  ? 'Thanh toán ngay'
-                                  : 'Theo dõi tiến độ'}
+                            {bk.status === 'quote_pending' ? (
+                              <Button
+                                size="sm"
+                                className="text-xs font-bold"
+                                leftIcon={<FileCheck className="w-3.5 h-3.5" />}
+                                onClick={() => setQuotationBooking(bk)}
+                              >
+                                Xem báo giá
                               </Button>
-                            </Link>
+                            ) : (
+                              <Link to={`/my-bookings/${bk.id}`}>
+                                <Button size="sm" variant="outline" className="text-xs">
+                                  {bk.status === 'payment_pending' ? 'Thanh toán ngay' : 'Theo dõi tiến độ'}
+                                </Button>
+                              </Link>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -479,6 +540,67 @@ export const CustomerDashboardPage: React.FC = () => {
               ) : (
                 <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 text-slate-500">
                   Chưa có lịch hẹn nào. Hãy tìm thợ và bấm Đặt lịch!
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: LỊCH SỬ & BẢO HÀNH */}
+          {activeTab === 'history' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                  <History className="w-4 h-4 text-blue-600" />
+                  Đơn đã hoàn thành & Phiếu bảo hành
+                </h3>
+                <Link to="/order-history" className="text-xs font-bold text-blue-600 hover:text-blue-700">
+                  Xem chi tiết & Gửi bảo hành
+                </Link>
+              </div>
+
+              {historyBookings.length > 0 ? (
+                <div className="space-y-4">
+                  {historyBookings.map((bk: Booking) => (
+                    <div key={bk.id} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-card space-y-3">
+                      <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <Avatar src={bk.technicianAvatar} name={bk.technicianName} size="md" />
+                          <div>
+                            <h4 className="font-bold text-sm text-slate-900">{bk.technicianName}</h4>
+                            <p className="text-xs text-slate-500">{bk.serviceName}</p>
+                          </div>
+                        </div>
+                        <Badge variant="primary" size="md" dot>
+                          Đã hoàn thành
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-slate-700">
+                        <div>
+                          <span className="text-slate-400 block font-medium">Ngày sửa:</span>
+                          <span className="font-bold text-slate-900">{formatDate(bk.date)}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block font-medium">Số tiền:</span>
+                          <span className="font-bold text-blue-600">{formatCurrency(bk.finalPrice || bk.estimatedPrice)}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block font-medium">Bảo hành:</span>
+                          <span className="font-bold text-slate-900">{bk.warrantyMonths} tháng</span>
+                        </div>
+                      </div>
+                      <div className="pt-3 border-t border-slate-100 flex justify-end">
+                        <Link to="/order-history">
+                          <Button size="sm" variant="outline" className="text-xs">
+                            Xem phiếu bảo hành
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 text-slate-500">
+                  Chưa có đơn hoàn thành nào.
                 </div>
               )}
             </div>
@@ -546,10 +668,52 @@ export const CustomerDashboardPage: React.FC = () => {
 
       </div>
 
-      {/* Create Request Modal */}
+      {/* Create / Edit Request Modal */}
       <CreateRequestModal
-        isOpen={createRequestOpen}
-        onClose={() => setCreateRequestOpen(false)}
+        isOpen={createRequestOpen || !!editRequestTarget}
+        onClose={() => {
+          setCreateRequestOpen(false);
+          setEditRequestTarget(null);
+        }}
+        editRequest={editRequestTarget}
+      />
+
+      {/* Cancel Request Confirmation */}
+      <Modal
+        isOpen={!!cancelRequestTarget}
+        onClose={() => setCancelRequestTarget(null)}
+        title="Hủy yêu cầu sửa chữa"
+        description="Bạn có chắc chắn muốn hủy yêu cầu này? Các thợ đang xem sẽ không thể báo giá nữa."
+        maxWidth="sm"
+      >
+        {cancelRequestTarget && (
+          <div className="space-y-4 text-xs">
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+              <p className="font-bold text-sm text-slate-900">{cancelRequestTarget.title}</p>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button variant="outline" size="sm" onClick={() => setCancelRequestTarget(null)}>
+                Đóng
+              </Button>
+              <Button
+                size="sm"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                onClick={handleConfirmCancelRequest}
+              >
+                Xác nhận hủy đơn
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Quotation Approval & Deposit Modal */}
+      <QuotationModal
+        isOpen={!!quotationBooking}
+        onClose={() => setQuotationBooking(null)}
+        booking={quotationBooking}
+        onApproved={() => loadData()}
+        onRejected={() => loadData()}
       />
 
       {/* Review Modal */}

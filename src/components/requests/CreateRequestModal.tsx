@@ -12,6 +12,7 @@ import { MapPin, Upload, Video } from 'lucide-react';
 export interface CreateRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editRequest?: ServiceRequest | null;
 }
 
 const PREFERRED_TIME_OPTIONS = [
@@ -28,7 +29,7 @@ const SAMPLE_MEDIA = [
   'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&q=80',
 ];
 
-export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose }) => {
+export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, editRequest }) => {
   const { user } = useAuth();
   const { success, error } = useNotification();
   const navigate = useNavigate();
@@ -59,7 +60,25 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
       const defaultAddr = addrs.find(a => a.isDefault) || addrs[0];
       setSelectedAddressId(defaultAddr ? defaultAddr.id : 'new');
     }
-  }, [isOpen, user]);
+
+    if (editRequest) {
+      setSelectedCategorySlug(editRequest.categoryId);
+      setDescription(editRequest.description);
+      setMediaPreviews(editRequest.photos);
+      setSelectedAddressId('new');
+      setNewCity(editRequest.city);
+      setNewDistrict(editRequest.district);
+      setNewAddressLine(editRequest.address);
+      if (PREFERRED_TIME_OPTIONS.includes(editRequest.preferredTime)) {
+        setPreferredTime(editRequest.preferredTime);
+        setCustomTime('');
+      } else {
+        setPreferredTime('Tùy chọn khác');
+        setCustomTime(editRequest.preferredTime);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, user, editRequest]);
 
   const resetForm = () => {
     setDescription('');
@@ -109,10 +128,30 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
 
     setTimeout(() => {
       const catObj = categories.find(c => c.slug === selectedCategorySlug);
-      const newReqId = `req-${Date.now()}`;
+      const resolvedCity = usingSavedAddress ? chosenAddress!.city : newCity;
+      const resolvedDistrict = usingSavedAddress ? chosenAddress!.district : newDistrict;
+      const resolvedAddress = usingSavedAddress ? chosenAddress!.address : newAddressLine.trim();
+
+      if (editRequest) {
+        storageService.updateRequest(editRequest.id, {
+          categoryId: selectedCategorySlug,
+          categoryName: catObj?.name || editRequest.categoryName,
+          title: `${catObj?.name || 'Yêu cầu sửa chữa'}: ${description.trim().slice(0, 60)}`,
+          description: description.trim(),
+          photos: mediaPreviews,
+          city: resolvedCity,
+          district: resolvedDistrict,
+          address: resolvedAddress,
+          preferredTime: finalTime,
+        });
+        setIsSubmitting(false);
+        success('Cập nhật yêu cầu thành công!', 'Các thợ đang xem yêu cầu sẽ thấy thông tin mới nhất.');
+        handleClose();
+        return;
+      }
 
       const newRequest: ServiceRequest = {
-        id: newReqId,
+        id: `req-${Date.now()}`,
         customerId: user?.id || 'user-cust-1',
         customerName: user?.name || 'Người dùng mới',
         customerPhone: user?.phone || '',
@@ -122,9 +161,9 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
         title: `${catObj?.name || 'Yêu cầu sửa chữa'}: ${description.trim().slice(0, 60)}`,
         description: description.trim(),
         photos: mediaPreviews,
-        city: usingSavedAddress ? chosenAddress!.city : newCity,
-        district: usingSavedAddress ? chosenAddress!.district : newDistrict,
-        address: usingSavedAddress ? chosenAddress!.address : newAddressLine.trim(),
+        city: resolvedCity,
+        district: resolvedDistrict,
+        address: resolvedAddress,
         preferredTime: finalTime,
         budget: 0,
         status: 'open',
@@ -144,8 +183,12 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Đăng yêu cầu sửa chữa"
-      description="Mô tả sự cố, các thợ quanh khu vực của bạn sẽ gửi báo giá nhanh chóng."
+      title={editRequest ? 'Chỉnh sửa yêu cầu sửa chữa' : 'Đăng yêu cầu sửa chữa'}
+      description={
+        editRequest
+          ? 'Cập nhật lại thông tin để thợ báo giá chính xác hơn.'
+          : 'Mô tả sự cố, các thợ quanh khu vực của bạn sẽ gửi báo giá nhanh chóng.'
+      }
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
@@ -330,7 +373,7 @@ export const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, 
             Hủy
           </Button>
           <Button type="submit" size="sm" isLoading={isSubmitting} className="font-bold px-6 shadow-brand">
-            Đăng yêu cầu ngay
+            {editRequest ? 'Lưu thay đổi' : 'Đăng yêu cầu ngay'}
           </Button>
         </div>
       </form>

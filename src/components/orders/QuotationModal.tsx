@@ -179,7 +179,7 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
         ) : (
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
             <Button type="button" variant="outline" onClick={() => setIsRejecting(true)}>
-              Từ chối / Yêu cầu giải trình
+              Từ chối
             </Button>
             <Button
               type="button"
@@ -188,7 +188,7 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
               leftIcon={<CheckCircle2 className="w-4 h-4" />}
               className="font-bold"
             >
-              Đồng ý báo giá
+              Đồng ý & Xác nhận
             </Button>
           </div>
         )}
