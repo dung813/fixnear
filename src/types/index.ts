@@ -51,6 +51,8 @@ export interface Technician {
   district: string;
   address: string;
   distanceKm: number;
+  lat?: number;
+  lng?: number;
   basePrice: number;
   isOnline: boolean;
   isAvailable: boolean;

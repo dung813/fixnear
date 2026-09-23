@@ -7,8 +7,8 @@ import { useCity } from '../context/CityContext';
 import { TechCard } from '../components/technicians/TechCard';
 import { BookingModal } from '../components/technicians/BookingModal';
 import { CompareModal } from '../components/technicians/CompareModal';
+import { TechnicianMap } from '../components/technicians/TechnicianMap';
 import { Button } from '../components/common/Button';
-import { Avatar } from '../components/common/Avatar';
 import { formatCurrency } from '../utils/formatters';
 import {
   Search,
@@ -19,9 +19,7 @@ import {
   Scale,
   CalendarCheck,
   List,
-  Map as MapIcon,
-  Star,
-  MapPin
+  Map as MapIcon
 } from 'lucide-react';
 
 const todayISO = () => new Date().toISOString().split('T')[0];
@@ -37,7 +35,6 @@ export const FindTechniciansPage: React.FC = () => {
   const [selectedTechForBooking, setSelectedTechForBooking] = useState<Technician | null>(null);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-  const [activeMapPin, setActiveMapPin] = useState<string | null>(null);
 
   // Compare state
   const [compareList, setCompareList] = useState<Technician[]>([]);
@@ -108,20 +105,6 @@ export const FindTechniciansPage: React.FC = () => {
     }
     return ['Tất cả'];
   }, [selectedCity]);
-
-  // Position each technician pin around the center "Vị trí của bạn" marker at a
-  // radius proportional to their real distanceKm (angle is pseudo-random per id
-  // since there's no real geocoding backend, but the distance itself is real).
-  const getMapPinPosition = (tech: Technician): { top: number; left: number } => {
-    let hash = 0;
-    for (let i = 0; i < tech.id.length; i++) hash = (hash * 37 + tech.id.charCodeAt(i)) % 10000;
-    const angle = (hash % 360) * (Math.PI / 180);
-    const radiusPct = Math.min(6 + tech.distanceKm * 11, 42);
-    return {
-      top: 50 + radiusPct * Math.sin(angle),
-      left: 50 + radiusPct * Math.cos(angle),
-    };
-  };
 
   // Compute a 0-100 "match score" combining proximity, rating and open-schedule signals
   const getMatchScore = (t: Technician): number => {
@@ -599,108 +582,12 @@ export const FindTechniciansPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div
-                className="relative w-full h-[520px] rounded-2xl border border-slate-200/80 shadow-card overflow-hidden"
-                style={{ backgroundColor: '#eef2e6' }}
-                onClick={() => setActiveMapPin(null)}
-              >
-                {/* Stylized city-map mockup: park blocks, a lake and a river, plus a street grid */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <div
-                    className="absolute inset-0 opacity-70"
-                    style={{
-                      backgroundImage:
-                        'linear-gradient(#d7ded0 1px,transparent 1px),linear-gradient(90deg,#d7ded0 1px,transparent 1px)',
-                      backgroundSize: '46px 46px',
-                    }}
-                  />
-                  <div
-                    className="absolute inset-0 opacity-40"
-                    style={{
-                      backgroundImage:
-                        'linear-gradient(#c7d0b8 1px,transparent 1px),linear-gradient(90deg,#c7d0b8 1px,transparent 1px)',
-                      backgroundSize: '138px 138px',
-                    }}
-                  />
-                  {/* "Sông Hồng" river strip along the right edge */}
-                  <div className="absolute -right-16 -top-10 w-56 h-[700px] bg-sky-300/50 rotate-[18deg] blur-[2px]" />
-                  {/* "Hồ Gươm"-style lake blob near the center-left */}
-                  <div className="absolute top-[38%] left-[22%] w-24 h-16 bg-sky-300/70 rounded-[60%_40%_55%_45%/50%_60%_40%_50%] blur-[1px]" />
-                  {/* Park / green block patches */}
-                  <div className="absolute top-[12%] left-[62%] w-20 h-20 bg-emerald-200/60 rounded-[45%_55%_60%_40%/40%_50%_50%_60%]" />
-                  <div className="absolute bottom-[10%] left-[12%] w-28 h-16 bg-emerald-200/50 rounded-[50%_50%_40%_60%/60%_40%_50%_50%]" />
-                </div>
-
-                <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur px-3 py-1.5 rounded-xl shadow-card text-[11px] font-semibold text-slate-600 flex items-center gap-1.5">
-                  <MapIcon className="w-3.5 h-3.5 text-blue-600" />
-                  Bản đồ minh họa - {selectedCity === 'Tất cả' ? 'Toàn quốc' : selectedCity}
-                </div>
-
-                {/* Center marker: the customer's own location */}
-                <div
-                  style={{ top: '50%', left: '50%' }}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 pointer-events-none"
-                >
-                  <span className="absolute w-10 h-10 rounded-full bg-blue-500/30 animate-ping" />
-                  <div className="relative w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow-lg" />
-                  <span className="mt-1.5 px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold shadow">
-                    Vị trí của bạn
-                  </span>
-                </div>
-
-                {filteredTechs.map(tech => {
-                  const pos = getMapPinPosition(tech);
-                  const isActive = activeMapPin === tech.id;
-                  return (
-                    <button
-                      key={tech.id}
-                      type="button"
-                      onClick={e => {
-                        e.stopPropagation();
-                        setActiveMapPin(isActive ? null : tech.id);
-                      }}
-                      style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
-                      className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center group"
-                    >
-                      <div
-                        className={`w-9 h-9 rounded-full border-2 shadow-lg overflow-hidden transition-transform ${
-                          isActive ? 'border-blue-600 scale-110 z-20' : 'border-white z-10 hover:scale-110'
-                        }`}
-                      >
-                        <Avatar src={tech.avatar} name={tech.name} size="sm" />
-                      </div>
-                      <div className={`w-2.5 h-2.5 -mt-1 rotate-45 ${isActive ? 'bg-blue-600' : 'bg-white'} border-r-2 border-b-2 ${isActive ? 'border-blue-600' : 'border-white'} shadow`} />
-                      <span className="mt-0.5 px-1.5 py-0.5 rounded bg-slate-900/80 text-white text-[9px] font-semibold">
-                        ~{tech.distanceKm}km
-                      </span>
-
-                      {isActive && (
-                        <div className="absolute top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 p-3 text-left z-30 animate-scale-in">
-                          <p className="font-bold text-xs text-slate-900 truncate">{tech.name}</p>
-                          <p className="text-[10px] text-slate-500 truncate mb-1.5">{tech.title}</p>
-                          <div className="flex items-center justify-between text-[11px] mb-2">
-                            <span className="flex items-center gap-1 font-semibold text-amber-600">
-                              <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> {tech.rating}
-                            </span>
-                            <span className="font-bold text-blue-600">
-                              Giá từ {formatCurrency(tech.basePrice)}
-                            </span>
-                          </div>
-                          <Button
-                            size="sm"
-                            className="w-full text-[11px] font-bold"
-                            onClick={e => {
-                              e.stopPropagation();
-                              navigate(`/technicians/${tech.id}`);
-                            }}
-                          >
-                            Xem hồ sơ
-                          </Button>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="relative w-full h-[600px] rounded-2xl border border-slate-200/80 shadow-card overflow-hidden">
+                <TechnicianMap
+                  technicians={filteredTechs}
+                  onViewProfile={id => navigate(`/technicians/${id}`)}
+                  onQuickBook={t => setSelectedTechForBooking(t)}
+                />
               </div>
             )
           ) : (
